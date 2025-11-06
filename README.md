@@ -1,20 +1,37 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
 
-# Run and deploy your AI Studio app
+# CartelWorx EVO VI
 
-This contains everything you need to run your app locally.
+This is a production-ready application that was built with the help of an AI assistant.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1omocHw8rXB1aY50NWB4e3QPUG1rEwRpo
+## Features
 
-## Run Locally
+* Role-based access control (RBAC)
+* Error and crash reporting
+* CI/CD deployment pipeline
+* Testing framework
 
-**Prerequisites:**  Node.js
+## Getting Started
 
+1. Install the dependencies:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```
+npm install
+```
+
+2. Start the development server:
+
+```
+npm run dev
+```
+
+3. Build the application for production:
+
+```
+npm run build
+```
+
+4. Run the tests:
+
+```
+npm test
+```

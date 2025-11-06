@@ -10,6 +10,7 @@ const RPM_MAX = 8000;
 
 const Ic7Dashboard: React.FC = () => {
     const latestData = useVehicleStore(state => state.latestData);
+    const hasActiveFault = useVehicleStore(state => state.hasActiveFault);
     const { convertSpeed, getSpeedUnit } = useUnitConversion();
 
     // Simulate missing sensor data
@@ -73,7 +74,7 @@ const Ic7Dashboard: React.FC = () => {
                     speedUnit={getSpeedUnit()}
                     trip={latestData.distance / 1000} // meters to km/miles (conversion handled in component)
                     // Warnings for indicator lights
-                    checkEngine={latestData.hasActiveFault}
+                    checkEngine={hasActiveFault}
                     lowOilPressure={latestData.oilPressure < 1.0 && latestData.rpm > 1200}
                     highCoolantTemp={latestData.engineTemp > 105}
                     lowBattery={latestData.batteryVoltage < 12.0 && latestData.rpm > 500}

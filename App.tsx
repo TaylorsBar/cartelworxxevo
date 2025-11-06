@@ -1,25 +1,28 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard';
-import Diagnostics from './pages/Diagnostics';
-import MaintenanceLog from './pages/MaintenanceLog';
-import TuningPage from './pages/TuningPage';
-import AIEngine from './pages/AIEngine';
-import Security from './pages/Security';
-import ARAssistant from './pages/ARAssistant';
-import Hedera from './pages/Hedera';
-import Appearance from './pages/Appearance';
-import Accessories from './pages/Accessories';
 import { AppearanceProvider } from './contexts/AppearanceContext';
 import CoPilot from './components/CoPilot';
-import RacePack from './pages/RacePack';
 import { useVehicleStore } from './store/useVehicleStore';
 import { ConnectionStatus } from './types';
 import StartupOverlay from './components/StartupOverlay';
-import Training from './pages/LiveTuning';
 import BottomNavBar from './components/Tachometer'; // Repurposed for BottomNavBar
+import LoadingSpinner from './components/LoadingSpinner';
+
+// Lazy-loaded components
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Diagnostics = lazy(() => import('./pages/Diagnostics'));
+const MaintenanceLog = lazy(() => import('./pages/MaintenanceLog'));
+const TuningPage = lazy(() => import('./pages/TuningPage'));
+const AIEngine = lazy(() => import('./pages/AIEngine'));
+const Security = lazy(() => import('./pages/Security'));
+const ARAssistant = lazy(() => import('./pages/ARAssistant'));
+const Hedera = lazy(() => import('./pages/Hedera'));
+const Appearance = lazy(() => import('./pages/Appearance'));
+const Accessories = lazy(() => import('./pages/Accessories'));
+const RacePack = lazy(() => import('./pages/RacePack'));
+const Training = lazy(() => import('./pages/LiveTuning'));
 
 const App: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -76,20 +79,22 @@ const App: React.FC = () => {
             <div className="flex-1 flex flex-col overflow-hidden relative">
               <main className="flex-1 overflow-hidden md:rounded-2xl theme-background">
                 <div className={`h-full w-full md:rounded-2xl border-0 md:border-2 bg-black/20 overflow-y-auto transition-all duration-500 pb-20 md:pb-0 ${mainFrameClasses()}`}>
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/diagnostics" element={<Diagnostics />} />
-                    <Route path="/logbook" element={<MaintenanceLog />} />
-                    <Route path="/tuning" element={<TuningPage />} />
-                    <Route path="/ai-engine" element={<AIEngine />} />
-                    <Route path="/ar-assistant" element={<ARAssistant />} />
-                    <Route path="/security" element={<Security />} />
-                    <Route path="/hedera" element={<Hedera />} />
-                    <Route path="/race-pack" element={<RacePack />} />
-                    <Route path="/accessories" element={<Accessories />} />
-                    <Route path="/appearance" element={<Appearance />} />
-                    <Route path="/training" element={<Training />} />
-                  </Routes>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/diagnostics" element={<Diagnostics />} />
+                      <Route path="/logbook" element={<MaintenanceLog />} />
+                      <Route path="/tuning" element={<TuningPage />} />
+                      <Route path="/ai-engine" element={<AIEngine />} />
+                      <Route path="/ar-assistant" element={<ARAssistant />} />
+                      <Route path="/security" element={<Security />} />
+                      <Route path="/hedera" element={<Hedera />} />
+                      <Route path="/race-pack" element={<RacePack />} />
+                      <Route path="/accessories" element={<Accessories />} />
+                      <Route path="/appearance" element={<Appearance />} />
+                      <Route path="/training" element={<Training />} />
+                    </Routes>
+                  </Suspense>
                 </div>
               </main>
               <CoPilot />

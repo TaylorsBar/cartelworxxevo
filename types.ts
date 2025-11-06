@@ -238,8 +238,8 @@ export type UnitSystem = 'metric' | 'imperial';
 // Types for Grounded AI responses
 export interface GroundingChunk {
   web?: {
-    uri: string;
-    title: string;
+    uri?: string;
+    title?: string;
   };
   maps?: {
     uri: string;

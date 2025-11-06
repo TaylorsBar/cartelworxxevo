@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { GoogleGenAI, LiveSession, LiveServerMessage, Modality, Blob } from '@google/genai';
+import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
 import { encode, decode, decodeAudioData } from '../utils/audioUtils';
 
 type ConnectionState = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'ERROR';
@@ -22,7 +22,7 @@ export const useLiveConversation = () => {
     const [aiTranscript, setAiTranscript] = useState('');
     const [error, setError] = useState<string | null>(null);
 
-    const sessionPromiseRef = useRef<Promise<LiveSession> | null>(null);
+    const sessionPromiseRef = useRef<any | null>(null);
     const audioInfrastructureRef = useRef<{
         inputAudioContext: AudioContext;
         outputAudioContext: AudioContext;
@@ -102,7 +102,7 @@ export const useLiveConversation = () => {
                         scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
                             const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
                             const pcmBlob = createBlob(inputData);
-                            sessionPromiseRef.current?.then((session) => {
+                            sessionPromiseRef.current?.then((session: any) => {
                                 session.sendRealtimeInput({ media: pcmBlob });
                             });
                         };

@@ -1,20 +1,21 @@
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import GaugeIcon from './icons/GaugeIcon';
-import ChatIcon from './icons/ChatIcon';
-import WrenchIcon from './icons/WrenchIcon';
-import TuningForkIcon from './icons/TuningForkIcon';
-import EngineIcon from './icons/EngineIcon';
-import ShieldIcon from './icons/ShieldIcon';
-import ARIcon from './icons/ARIcon';
-import HederaIcon from './icons/HederaIcon';
-import StopwatchIcon from './icons/StopwatchIcon';
-import PaintBrushIcon from './icons/PaintBrushIcon';
-import SoundWaveIcon from './icons/SoundWaveIcon';
-import ChevronDoubleLeftIcon from './icons/ChevronDoubleLeftIcon';
-import { useVehicleStore } from '../store/useVehicleStore';
-import { ConnectionStatus } from '../types';
-import BookOpenIcon from './tachometers/Tachometer'; // Repurposed for BookOpenIcon
+import GaugeIcon from './components/icons/GaugeIcon';
+import ChatIcon from './components/icons/ChatIcon';
+import WrenchIcon from './components/icons/WrenchIcon';
+import TuningForkIcon from './components/icons/TuningForkIcon';
+import EngineIcon from './components/icons/EngineIcon';
+import ShieldIcon from './components/icons/ShieldIcon';
+import ARIcon from './components/icons/ARIcon';
+import HederaIcon from './components/icons/HederaIcon';
+import StopwatchIcon from './components/icons/StopwatchIcon';
+import PaintBrushIcon from './components/icons/PaintBrushIcon';
+import SoundWaveIcon from './components/icons/SoundWaveIcon';
+import ChevronDoubleLeftIcon from './components/icons/ChevronDoubleLeftIcon';
+import { useVehicleStore } from './store/useVehicleStore';
+import { ConnectionStatus } from './types';
+import HistoryIcon from './components/icons/HistoryIcon'; 
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: GaugeIcon },
@@ -24,7 +25,7 @@ const navigation = [
   { name: 'Diagnostics', href: '/diagnostics', icon: ChatIcon },
   { name: 'Logbook', href: '/logbook', icon: WrenchIcon },
   { name: 'Tuning', href: '/tuning', icon: TuningForkIcon },
-  { name: 'Training', href: '/training', icon: BookOpenIcon },
+  { name: 'Training', href: '/training', icon: HistoryIcon },
   { name: 'Accessories', href: '/accessories', icon: SoundWaveIcon },
   { name: 'Appearance', href: '/appearance', icon: PaintBrushIcon },
   { name: 'Security', href: '/security', icon: ShieldIcon },

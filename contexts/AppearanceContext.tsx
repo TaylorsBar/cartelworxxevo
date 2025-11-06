@@ -4,7 +4,7 @@ import React, { createContext, useState, useEffect, useMemo } from 'react';
 import type { UnitSystem as TUnitSystem } from '../types';
 export type { UnitSystem } from '../types';
 
-export type Theme = 'rally' | 'modern' | 'classic' | 'haltech' | 'minimalist' | 'ic7';
+export type Theme = 'unified-dark' | 'cyberpunk-legacy' | 'modern' | 'classic' | 'haltech' | 'minimalist' | 'ic7';
 export type AccentMaterial = 'cyan' | 'brushed-brass' | 'satin-brass' | 'antique-brass' | 'carbon-fiber';
 export type LEDMode = 'solid' | 'pulse' | 'music';
 export type CopilotAudioOutput = 'phone' | 'stereo';
@@ -37,7 +37,7 @@ const defaultLedSettings: LEDSettings = {
 };
 
 export const AppearanceContext = createContext<AppearanceContextProps>({
-  theme: 'rally',
+  theme: 'unified-dark',
   setTheme: () => {},
   accentMaterial: 'cyan',
   setAccentMaterial: () => {},
@@ -51,7 +51,7 @@ export const AppearanceContext = createContext<AppearanceContextProps>({
 
 export const AppearanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-      return (localStorage.getItem('vehicle-theme') as Theme) || 'rally';
+      return (localStorage.getItem('vehicle-theme') as Theme) || 'unified-dark';
   });
   const [accentMaterial, setAccentMaterialState] = useState<AccentMaterial>(() => {
       return (localStorage.getItem('vehicle-accent-material') as AccentMaterial) || 'cyan';
