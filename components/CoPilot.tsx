@@ -34,7 +34,6 @@ const CoPilot: React.FC = () => {
     return !alert.isFaultRelated || hasActiveFault;
   });
 
-  // Proactively announce new critical alerts
   useEffect(() => {
     const newCriticalAlerts = activeAlerts.filter(
       alert => alert.level === AlertLevel.Critical && !announcedAlertIds.has(alert.id)
@@ -45,7 +44,7 @@ const CoPilot: React.FC = () => {
       const announcement = `Critical Alert: ${alertToAnnounce.component}. ${alertToAnnounce.message}`;
       
       setAiResponse(announcement);
-      setIsOpen(true); // Open the modal to show the user what's happening
+      setIsOpen(true);
       setState(CoPilotState.Speaking);
       speak(announcement);
 
@@ -75,34 +74,27 @@ const CoPilot: React.FC = () => {
       setState(CoPilotState.Idle);
       setIsOpen(true);
       if (speechError === 'not-allowed') {
-        setAiResponse("Microphone access is required for Co-Pilot. Please enable it in your browser settings and try again.");
+        setAiResponse("Microphone access is required. Please enable it in browser settings.");
       } else {
-        setAiResponse(`A speech recognition error occurred: ${speechError}.`);
+        setAiResponse(`An error occurred: ${speechError}.`);
       }
     }
   }, [speechError]);
   
   useEffect(() => {
-    if (isListening) {
-        setState(CoPilotState.Listening);
-    } else if (state === CoPilotState.Listening) {
-        // This handles cases where listening stops without a result (e.g., timeout or user cancels)
-        // and it's not an error case (which is handled by the speechError useEffect).
-        setState(CoPilotState.Idle);
-    }
+    if (isListening) setState(CoPilotState.Listening);
+    else if (state === CoPilotState.Listening) setState(CoPilotState.Idle);
   }, [isListening, state]);
   
   useEffect(() => {
-    if (!isSpeaking && state === CoPilotState.Speaking) {
-      setState(CoPilotState.Idle);
-    }
+    if (!isSpeaking && state === CoPilotState.Speaking) setState(CoPilotState.Idle);
   }, [isSpeaking, state]);
   
   const handleFabClick = () => {
     if (!hasSupport) {
         setIsOpen(true);
         setState(CoPilotState.Idle);
-        setAiResponse("Sorry, your browser doesn't support the voice commands needed for the Co-Pilot feature.");
+        setAiResponse("Sorry, your browser doesn't support voice commands.");
         return;
     }
       
@@ -110,56 +102,77 @@ const CoPilot: React.FC = () => {
       setIsOpen(true);
       startListening();
     } else {
-      // Allow interrupting any state
       stopListening();
-      cancel(); // Stop speaking
+      cancel();
       setState(CoPilotState.Idle);
       setIsOpen(false);
     }
   };
 
-  const fabColor = state === CoPilotState.Listening ? 'bg-red-500' : 'bg-[var(--theme-accent-primary)]';
-  const ringColor = state === CoPilotState.Listening ? 'ring-red-500' : 'ring-[var(--theme-accent-primary)]';
+  const fabStyle: React.CSSProperties = {
+    backgroundColor: state === CoPilotState.Listening ? 'var(--theme-accent-red)' : 'var(--theme-accent-primary)',
+    boxShadow: `0 0 12px ${state === CoPilotState.Listening ? 'var(--theme-accent-red)' : 'var(--theme-accent-primary)'}`
+  };
+
+  const StatusIndicator = () => {
+    let icon;
+    let text = "AI Co-Pilot is standing by.";
+
+    switch (state) {
+        case CoPilotState.Listening:
+            icon = <div className="w-6 h-6 bg-red-500 rounded-full animate-pulse" />;
+            text = "Listening...";
+            break;
+        case CoPilotState.Thinking:
+            icon = <div className="w-10 h-10 border-4 border-[var(--theme-text-primary)] border-t-transparent rounded-full animate-spin" />;
+            text = "Thinking...";
+            break;
+        case CoPilotState.Speaking:
+            icon = <SoundWaveIcon className="w-10 h-10 text-[var(--theme-text-primary)]"/>;
+            text = "Responding...";
+            break;
+        default:
+            icon = <MicrophoneIcon className="w-10 h-10 text-[var(--theme-text-primary)]"/>;
+    }
+
+    return (
+        <div className="flex flex-col items-center justify-center gap-4 text-center">
+            <div className="w-24 h-24 rounded-full bg-black/20 flex items-center justify-center">{icon}</div>
+            <p className="text-lg text-[var(--theme-text-secondary)]">{text}</p>
+        </div>
+    );
+  };
 
   return (
     <>
       <button
         onClick={handleFabClick}
-        className={`fixed bottom-6 right-6 w-16 h-16 rounded-full text-black flex items-center justify-center transition-colors duration-300 z-50 ${fabColor} hover:opacity-90 shadow-glow-theme`}
+        style={fabStyle}
+        className='fixed bottom-6 right-6 w-16 h-16 rounded-full text-black flex items-center justify-center transition-all duration-300 z-50 shadow-lg'
         aria-label="Activate AI Co-Pilot"
       >
         {state === CoPilotState.Idle && <MicrophoneIcon className="w-8 h-8" />}
         {state === CoPilotState.Listening && <div className="w-5 h-5 rounded-full bg-black animate-pulse" />}
         {state === CoPilotState.Thinking && <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />}
         {state === CoPilotState.Speaking && <SoundWaveIcon className="w-8 h-8"/> }
-
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 flex items-center justify-center" onClick={() => {if (state !== CoPilotState.Speaking) setIsOpen(false)}}>
-          <div className="w-full max-w-xl text-center" onClick={(e) => e.stopPropagation()}>
-            <div className={`relative inline-block p-4 border-2 ${ringColor} rounded-full mb-6`}>
-              <div className={`w-24 h-24 rounded-full ${fabColor} flex items-center justify-center`}>
-                 <MicrophoneIcon className="w-12 h-12 text-black"/>
-              </div>
-              {state === CoPilotState.Listening && <div className={`absolute inset-0 rounded-full ring-4 ${ringColor} animate-ping`}></div>}
-            </div>
-
-            <p className="text-lg text-gray-400 mb-2">
-                {state === CoPilotState.Listening ? 'Listening...' : 'AI Co-Pilot is standing by.'}
-            </p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 flex items-center justify-center p-4" onClick={() => {if (state !== CoPilotState.Speaking) setIsOpen(false)}}>
+          <div className="glass-panel w-full max-w-xl p-6 flex flex-col items-center gap-4" onClick={(e) => e.stopPropagation()}>
+            <StatusIndicator />
             
-            <div className="min-h-[56px] px-4">
+            <div className="min-h-[56px] text-center">
                 {aiResponse && (
-                    <p className={`text-xl font-semibold ${aiResponse.startsWith('Critical Alert:') ? 'text-red-500' : 'text-white'}`}>
+                    <p className={`text-xl font-semibold ${aiResponse.startsWith('Critical Alert:') ? 'text-[var(--theme-accent-red)]' : 'text-[var(--theme-text-primary)]'}`}>
                         {aiResponse}
                     </p>
                 )}
             </div>
 
             {lastCommand && (
-                <p className="text-lg text-red-400/80 line-through mt-2">
-                    {lastCommand}
+                <p className="text-base text-[var(--theme-text-secondary)] opacity-80 line-through mt-2">
+                    {`User: "${lastCommand}"`}
                 </p>
             )}
           </div>

@@ -3,15 +3,26 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "build:production": "NODE_ENV=production vite build",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "jest",
+    "electron:start": "electron .",
+    "electron:build": "electron-builder"
   },
   "dependencies": {
+    "@capacitor-community/bluetooth-le": "^7.2.0",
+    "@capacitor-community/electron": "^5.0.1",
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/geolocation": "^7.1.5",
+    "@capacitor/ios": "^7.4.4",
     "@google/genai": "^1.12.0",
+    "@heroicons/react": "^2.2.0",
     "@sentry/react": "^10.23.0",
     "@sentry/tracing": "^7.120.4",
     "@types/jest": "^30.0.0",
@@ -28,6 +39,8 @@
     "@testing-library/react": "^16.3.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^28.2.3",
+    "electron-builder": "^24.9.1",
     "jest": "^30.2.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"

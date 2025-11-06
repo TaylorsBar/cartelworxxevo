@@ -9,7 +9,7 @@ export const useSweepValue = (realValue: number | undefined, min: number, max: n
   const isGaugeSweeping = useVehicleStore(state => state.isGaugeSweeping);
   // FIX: Initialize with a fallback to `min` to prevent errors if `realValue` is undefined on the first render.
   // FIX: Use lazy initializer for useState to prevent toolchain errors with potentially undefined initial value.
-  const [displayValue, setDisplayValue] = useState(realValue ?? min);
+  const [displayValue, setDisplayValue] = useState(() => realValue ?? min);
   const animationRef = useRef<number | undefined>();
 
   useEffect(() => {

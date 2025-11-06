@@ -30,89 +30,37 @@
               'classic': ['Bebas Neue', 'sans-serif'],
             },
             boxShadow: {
-              'glow-cyan': '0 0 5px #00FFFF, 0 0 10px #00FFFF, 0 0 15px #007FFF',
-              'glow-blue': '0 0 5px #007FFF, 0 0 10px #007FFF',
-              'glow-red': '0 0 5px #FF0000, 0 0 10px #FF0000',
-              'glow-yellow': '0 0 5px #F3FF00, 0 0 10px #F3FF00',
-              'glow-green': '0 0 5px #00FF00, 0 0 10px #00FF00',
               'glow-theme': '0 0 8px var(--theme-accent-primary), 0 0 12px var(--theme-accent-primary)',
-              'neumorphic-light': 'inset 6px 6px 12px var(--neumorphic-shadow-dark), inset -6px -6px 12px var(--neumorphic-shadow-light)',
-              'neumorphic-dark': '6px 6px 12px var(--neumorphic-shadow-dark), -6px -6px 12px var(--neumorphic-shadow-light)',
             }
           },
         },
       }
     </script>
     <style>
-      /* AESTHETIC REFINEMENT - UNIFIED DESIGN SYSTEM */
+      /* SEAMLESS & TRANSLUCENT AESTHETIC */
 
-      /* New Default Theme: Unified Dark */
       :root, [data-theme="unified-dark"] {
-        --theme-bg-start: #01020d; /* Very dark blue for a deep tech feel */
+        --theme-bg-start: #01020d;
         --theme-bg-end: #000;
-        --theme-text-primary: #f0f4f8; /* Clean, slightly cool white */
-        --theme-text-secondary: #90a4b5; /* Muted cool gray for secondary info */
-        --theme-accent-primary: #00e5ff; /* Vibrant cyan for primary actions and highlights */
-        --theme-accent-secondary: #ff00ff; /* Electric magenta for secondary accents */
-        --theme-accent-red: #ff4d6b; /* Punchy red for errors and warnings */
-        --theme-accent-green: #00ff7f; /* Bright green for success states */
-        --theme-accent-yellow: #f3ff58; /* Vivid yellow for alerts */
+        --theme-text-primary: #f0f4f8;
+        --theme-text-secondary: #90a4b5;
+        --theme-accent-primary: #00e5ff;
+        --theme-accent-secondary: #ff00ff;
+        
+        /* Seamless Glass Effect */
+        --glass-bg: rgba(10, 12, 28, 0.5);
+        --glass-border: transparent; /* Remove borders */
+        --glass-shadow: rgba(0, 0, 0, 0.4);
 
-        /* Refined Glass Effect */
-        --glass-bg: rgba(10, 12, 28, 0.6); /* Darker, subtly blue-tinted glass */
-        --glass-border: rgba(0, 229, 255, 0.25); /* Sharp cyan border */
-        --glass-shadow: rgba(0, 0, 0, 0.5);
-
-        --neumorphic-shadow-light: rgba(0, 229, 255, 0.08);
-        --neumorphic-shadow-dark: rgba(0, 0, 0, 0.7);
-        --grid-color: rgba(0, 127, 255, 0.1); /* Grid is slightly more visible */
+        --grid-color: rgba(0, 127, 255, 0.08);
         --theme-ambient-glow-color: transparent;
-        --theme-gauge-face: #080a14;
-        --theme-needle-color: var(--theme-accent-primary);
-        --theme-indicator-inactive: rgba(255, 255, 255, 0.15);
+        --sidebar-bg: rgba(10, 12, 28, 0.3); /* More translucent sidebar */
       }
 
-      [data-theme="cyberpunk-legacy"] { /* Previous Default, renamed */
-        --theme-bg-start: #020418;
-        --theme-bg-end: #000;
-        --theme-text-primary: #E0E8F0;
-        --theme-text-secondary: #8295a8;
-        --theme-accent-primary: #00FFFF;
-        --theme-accent-secondary: #FF00FF;
-        --theme-accent-red: #FF4D4D;
-        --theme-accent-green: #00FF4D;
-        --theme-accent-yellow: #F3FF00;
-        --glass-bg: rgba(16, 18, 27, 0.5);
-        --glass-border: rgba(0, 255, 255, 0.2);
-        --neumorphic-shadow-light: rgba(0, 255, 255, 0.08);
-        --neumorphic-shadow-dark: rgba(0, 0, 0, 0.6);
-        --grid-color: rgba(0, 127, 255, 0.07);
-        --theme-ambient-glow-color: transparent;
-        --theme-gauge-face: #050818;
-        --theme-needle-color: var(--theme-accent-secondary);
-        --theme-indicator-inactive: rgba(255, 255, 255, 0.1);
-      }
-      
-      [data-theme="modern"] { /* Cyberpunk Redesign */
-        --theme-bg-start: #020010;
-        --theme-bg-end: #000;
-        --theme-accent-primary: #FF00FF; /* Magenta */
-        --theme-accent-secondary: #9D00FF; /* Purple */
-        --glass-bg: rgba(10, 5, 20, 0.4);
-        --glass-border: rgba(255, 0, 255, 0.2);
-        --neumorphic-shadow-light: rgba(255, 0, 255, 0.08);
-        --grid-color: rgba(157, 0, 255, 0.07);
-        --theme-ambient-glow-color: var(--theme-accent-secondary);
-        --theme-gauge-face: #050508;
-        --theme-needle-color: var(--theme-accent-primary);
-        --theme-indicator-inactive: rgba(255, 255, 255, 0.1);
-      }
-      
-      /* Other themes remain unchanged... */
-      
-      /* Base Elements & Smooth Transitions */
+      /* ... (other themes can be updated similarly) ... */
+
       * {
-        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        transition: background-color 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
       }
 
       body {
@@ -127,87 +75,75 @@
             linear-gradient(to bottom, transparent, var(--theme-bg-end)),
             linear-gradient(var(--grid-color) 1px, transparent 1px),
             linear-gradient(to right, var(--grid-color) 1px, transparent 1px);
-        background-size: 100% 100%, 50px 50px, 50px 50px; /* Slightly larger grid */
+        background-size: 100% 100%, 50px 50px, 50px 50px;
         box-shadow: inset 0 0 120px 30px var(--theme-ambient-glow-color, transparent);
-        transition: box-shadow 0.5s ease-in-out, background-color 0.5s;
+        transition: box-shadow 0.5s ease-in-out;
         position: relative;
         overflow: hidden;
       }
-      .theme-background::before {
+      
+      /* Seamless Glass Panel */
+      .glass-panel {
+        background-color: var(--glass-bg);
+        backdrop-filter: blur(16px) saturate(120%);
+        -webkit-backdrop-filter: blur(16px) saturate(120%);
+        border: 1px solid var(--glass-border); /* Becomes transparent */
+        border-radius: 12px;
+        box-shadow: 0 10px 40px var(--glass-shadow);
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Subtle Scan Lines (replaces flicker) */
+      .glass-panel::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        background-image: radial-gradient(ellipse at center, rgba(100, 120, 200, 0.1) 0%, transparent 70%);
+        background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 2px);
+        background-size: 100% 4px;
+        animation: scan-lines 12s linear infinite;
         pointer-events: none;
-      }
-      
-      /* Enhanced Glass Panel Style */
-      .glass-panel {
-        background-color: var(--glass-bg);
-        /* Add a subtle sheen for a more realistic glass effect */
-        background-image: radial-gradient(circle at top left, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 40%);
-        backdrop-filter: blur(16px) saturate(120%); /* More blur for a frostier look */
-        -webkit-backdrop-filter: blur(16px) saturate(120%);
-        border: 1px solid var(--glass-border);
-        border-radius: 12px; /* Softened corners for a modern feel */
-        box-shadow: 0 10px 40px var(--glass-shadow); /* Deeper, more defined shadow */
-        transition: background-color 0.4s, border-color 0.4s, box-shadow 0.4s;
+        opacity: 0.5;
       }
 
-      /* Buttons (no changes, but included for context) */
-      .btn { @apply px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-base-900 border-2 shadow-md bg-transparent disabled:opacity-50 disabled:cursor-not-allowed; }
-      .btn-primary { @apply border-[var(--theme-accent-primary)] text-[var(--theme-accent-primary)] shadow-[var(--theme-accent-primary)]/20 hover:bg-[var(--theme-accent-primary)] hover:text-black hover:shadow-glow-theme focus:ring-[var(--theme-accent-primary)]; }
-      .btn-danger { @apply border-[var(--theme-accent-red)] text-[var(--theme-accent-red)] shadow-[var(--theme-accent-red)]/20 hover:bg-[var(--theme-accent-red)] hover:text-black hover:shadow-glow-red focus:ring-[var(--theme-accent-red)]; }
-      .btn-success { @apply border-[var(--theme-accent-green)] text-[var(--theme-accent-green)] shadow-[var(--theme-accent-green)]/20 hover:bg-[var(--theme-accent-green)] hover:text-black hover:shadow-glow-green focus:ring-[var(--theme-accent-green)]; }
-      .btn-warning { @apply border-[var(--theme-accent-yellow)] text-[var(--theme-accent-yellow)] shadow-[var(--theme-accent-yellow)]/20 hover:bg-[var(--theme-accent-yellow)] hover:text-black hover:shadow-glow-yellow focus:ring-[var(--theme-accent-yellow)]; }
-      .btn-secondary { @apply border-base-700 text-gray-300 shadow-transparent hover:bg-base-700 hover:text-white focus:ring-base-500; }
-      .btn-action { @apply border-[var(--theme-accent-secondary)] text-[var(--theme-accent-secondary)] shadow-[var(--theme-accent-secondary)]/20 hover:bg-[var(--theme-accent-secondary)] hover:text-black hover:shadow-[0_0_8px_var(--theme-accent-secondary)] focus:ring-[var(--theme-accent-secondary)]; }
-
-      .btn-neumorphic {
-        @apply font-semibold transition-all duration-200 focus:outline-none border-0 rounded-xl;
-        background: transparent;
-        color: var(--theme-text-secondary);
-      }
-      .btn-neumorphic:hover {
-        color: var(--theme-text-primary);
-        background-color: var(--neumorphic-shadow-light);
-      }
-      .btn-neumorphic-active, .btn-neumorphic:active {
-        background: linear-gradient(145deg, #0d0f17, #10121b); /* Darker concave effect */
-        box-shadow: inset 4px 4px 8px var(--neumorphic-shadow-dark), inset -4px -4px 8px var(--neumorphic-shadow-light);
-        color: var(--theme-accent-primary);
+      /* Sidebar specific styling for seamless layout */
+      .sidebar-glass {
+        background-color: var(--sidebar-bg);
+        backdrop-filter: blur(20px) saturate(150%);
+        -webkit-backdrop-filter: blur(20px) saturate(150%);
+        border-right: none; /* No border */
+        box-shadow: 5px 0 50px var(--glass-shadow);
+        transition: background-color 0.5s ease-in-out;
       }
       
-      /* Animation */
+      /* App-wide translucent hover effect */
+      .translucent-hover {
+        transition: background-color 0.2s ease-out;
+      }
+      .translucent-hover:hover {
+        background-color: rgba(255, 255, 255, 0.07);
+      }
+
+      /* Animations */
+      @keyframes scan-lines {
+        from { background-position: 0 0; }
+        to { background-position: 0 100%; }
+      }
+
       @keyframes fade-in {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }
       }
       .animate-fade-in {
-        animation: fade-in 0.5s ease-out forwards;
+        animation: fade-in 0.4s ease-out forwards;
       }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.1.1/",
-    "react": "https://esm.sh/react@^19.1.1",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.7.1",
-    "recharts": "https://esm.sh/recharts@^3.1.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.12.0",
-    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
-    "zustand": "https://esm.sh/zustand@^4.5.4"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+  </head>
   <body class="text-gray-200 font-sans">
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>
