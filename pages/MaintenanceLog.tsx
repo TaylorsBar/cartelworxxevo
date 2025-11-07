@@ -13,7 +13,7 @@ const AddRecordModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (service.trim() && notes.trim()) {
-            addMaintenanceRecord({ service, notes });
+            addMaintenanceRecord({ service, notes, isAiRecommendation: false });
             onClose();
         }
     };
@@ -67,9 +67,10 @@ const HealthReportModal: React.FC<{ onClose: () => void, report: string, isLoadi
 
 
 const MaintenanceLog: React.FC = () => {
-    const { maintenanceLog, vehicleDataHistory } = useVehicleStore(state => ({
+    const { maintenanceLog, vehicleDataHistory, vehicle } = useVehicleStore(state => ({
         maintenanceLog: state.maintenanceLog,
-        vehicleDataHistory: state.data
+        vehicleDataHistory: state.data,
+        vehicle: state.vehicle
     }));
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -81,7 +82,7 @@ const MaintenanceLog: React.FC = () => {
         setIsReportLoading(true);
         setReport('');
         try {
-            const result = await generateHealthReport(vehicleDataHistory, maintenanceLog);
+            const result = await generateHealthReport(vehicleDataHistory, vehicle);
             setReport(result);
         } catch (e) {
             setReport("Sorry, there was an error generating the health report. Please check your connection and try again.");
@@ -114,7 +115,7 @@ const MaintenanceLog: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-black divide-y divide-base-700/50">
-              {maintenanceLog.length > 0 ? maintenanceLog.map((log) => (
+              {maintenanceLog.length > 0 ? maintenanceLog.map((log: MaintenanceRecord) => (
                 <tr key={log.id} className="hover:bg-base-800/40">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-300">{log.date}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-200">

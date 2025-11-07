@@ -33,14 +33,11 @@ const App: React.FC = () => {
   const [isStartingUp, setIsStartingUp] = useState(true);
 
   useEffect(() => {
-    // This sequence is timed to match the animations in StartupOverlay.tsx
     const sequenceTimer = setTimeout(() => {
-      // After logo animation (3.5s), trigger the gauge sweep
       triggerGaugeSweep();
     }, 3500);
 
     const finalTimer = setTimeout(() => {
-      // After the entire sequence is over (5s), remove the overlay
       setIsStartingUp(false);
     }, 5000);
 
@@ -50,7 +47,6 @@ const App: React.FC = () => {
     };
   }, [triggerGaugeSweep]);
 
-
   const handleToggleSidebar = () => {
     setIsSidebarCollapsed(prev => !prev);
   };
@@ -58,14 +54,14 @@ const App: React.FC = () => {
   const mainFrameClasses = () => {
     switch (connectionStatus) {
       case ConnectionStatus.CONNECTED:
-        return 'border-[var(--theme-accent-primary)] shadow-glow-theme';
+        return 'border-brand-cyan shadow-glow-theme';
       case ConnectionStatus.CONNECTING:
         return 'border-brand-yellow shadow-glow-yellow animate-pulse';
       case ConnectionStatus.ERROR:
         return 'border-brand-red shadow-glow-red';
       case ConnectionStatus.DISCONNECTED:
       default:
-        return 'border-gray-800 shadow-none';
+        return 'border-base-800 shadow-none';
     }
   };
 
@@ -73,12 +69,12 @@ const App: React.FC = () => {
     <AppearanceProvider>
       <HashRouter>
         <StartupOverlay isVisible={isStartingUp} />
-        <div className="h-screen bg-black text-gray-200">
+        <div className="h-screen bg-black text-gray-200 antialiased">
           <div className="flex h-full md:gap-4 md:p-4">
             <Sidebar isCollapsed={isSidebarCollapsed} onToggle={handleToggleSidebar} />
             <div className="flex-1 flex flex-col overflow-hidden relative">
-              <main className="flex-1 overflow-hidden md:rounded-2xl theme-background">
-                <div className={`h-full w-full md:rounded-2xl border-0 md:border-2 bg-black/20 overflow-y-auto transition-all duration-500 pb-20 md:pb-0 ${mainFrameClasses()}`}>
+              <main className={`flex-1 overflow-hidden rounded-main theme-background border-2 transition-all duration-500 ${mainFrameClasses()}`}>
+                <div className="h-full w-full bg-black/30 overflow-y-auto pb-20 md:pb-0">
                   <Suspense fallback={<LoadingSpinner />}>
                     <Routes>
                       <Route path="/" element={<Dashboard />} />

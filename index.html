@@ -12,15 +12,15 @@
         theme: {
           extend: {
             colors: {
-              'brand-cyan': '#00FFFF',
-              'brand-blue': '#007FFF',
-              'brand-pink': '#FF00FF',
-              'brand-red': '#FF0000',
-              'brand-green': '#00FF00',
-              'brand-yellow': '#F3FF00',
-              'base-900': '#0A0A0F',
-              'base-800': '#14141E',
-              'base-700': '#1E1E2D',
+              'brand-cyan': 'var(--theme-accent-primary)',
+              'brand-blue': 'var(--theme-accent-primary)',
+              'brand-pink': 'var(--theme-accent-secondary)',
+              'brand-red': '#FF3B30',
+              'brand-green': '#34C759',
+              'brand-yellow': '#FFCC00',
+              'base-900': 'var(--theme-bg-start)',
+              'base-800': '#1c1c2e',
+              'base-700': '#2a2a44',
               'theme-accent': 'var(--theme-accent-primary)',
             },
             fontFamily: {
@@ -30,113 +30,136 @@
               'classic': ['Bebas Neue', 'sans-serif'],
             },
             boxShadow: {
-              'glow-theme': '0 0 8px var(--theme-accent-primary), 0 0 12px var(--theme-accent-primary)',
+              'glow-theme': '0 0 10px var(--theme-accent-primary), 0 0 16px var(--theme-accent-primary)',
+              'glow-yellow': '0 0 10px #FFCC00, 0 0 16px #FFCC00',
+              'glow-red': '0 0 10px #FF3B30, 0 0 16px #FF3B30',
+            },
+            borderRadius: {
+              'main': 'var(--border-radius-main)',
+              'subtle': 'var(--border-radius-subtle)',
             }
           },
         },
       }
     </script>
     <style>
-      /* SEAMLESS & TRANSLUCENT AESTHETIC */
+    :root, [data-theme="cyber-vision"] {
+        --theme-bg-start: #020418;
+        --theme-bg-end: #000;
+        --theme-text-primary: #e0e8f0;
+        --theme-text-secondary: #809ab0;
+        --theme-accent-primary: #00aaff; /* Vibrant Blue */
+        --theme-accent-secondary: #ff00aa; /* Vibrant Pink/Magenta */
 
-      :root, [data-theme="unified-dark"] {
+        /* Refined Glass Effect */
+        --glass-bg: rgba(12, 16, 40, 0.6);
+        --glass-border-color: rgba(0, 170, 255, 0.2);
+        --glass-shadow: rgba(0, 0, 0, 0.5);
+        --glass-backdrop-blur: 16px;
+        --glass-backdrop-saturate: 130%;
+
+        --grid-color: rgba(0, 170, 255, 0.07);
+        --sidebar-bg: rgba(8, 10, 25, 0.5);
+
+        /* New Variables */
+        --border-radius-main: 1rem; /* 16px */
+        --border-radius-subtle: 0.5rem; /* 8px */
+        --transition-speed-fast: 0.2s;
+        --transition-speed-medium: 0.4s;
+    }
+
+    /* Keep other themes for now, but focus on the new one */
+    [data-theme="unified-dark"] {
         --theme-bg-start: #01020d;
         --theme-bg-end: #000;
         --theme-text-primary: #f0f4f8;
         --theme-text-secondary: #90a4b5;
         --theme-accent-primary: #00e5ff;
         --theme-accent-secondary: #ff00ff;
-        
-        /* Seamless Glass Effect */
         --glass-bg: rgba(10, 12, 28, 0.5);
-        --glass-border: transparent; /* Remove borders */
+        --glass-border: transparent;
         --glass-shadow: rgba(0, 0, 0, 0.4);
-
         --grid-color: rgba(0, 127, 255, 0.08);
-        --theme-ambient-glow-color: transparent;
-        --sidebar-bg: rgba(10, 12, 28, 0.3); /* More translucent sidebar */
-      }
+        --sidebar-bg: rgba(10, 12, 28, 0.3);
+    }
 
-      /* ... (other themes can be updated similarly) ... */
 
-      * {
-        transition: background-color 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
-      }
+    * {
+        transition: background-color var(--transition-speed-fast) ease-out, color var(--transition-speed-fast) ease-out, border-color var(--transition-speed-fast) ease-out;
+    }
 
-      body {
-        background-color: black;
+    body {
+        background-color: var(--theme-bg-end);
         color: var(--theme-text-primary);
         font-family: 'Inter', sans-serif;
-      }
+    }
 
-      .theme-background {
+    .theme-background {
         background-color: var(--theme-bg-start);
-        background-image: 
+        background-image:
+            radial-gradient(ellipse at bottom, rgba(0, 170, 255, 0.15) 0%, transparent 50%),
             linear-gradient(to bottom, transparent, var(--theme-bg-end)),
             linear-gradient(var(--grid-color) 1px, transparent 1px),
             linear-gradient(to right, var(--grid-color) 1px, transparent 1px);
-        background-size: 100% 100%, 50px 50px, 50px 50px;
-        box-shadow: inset 0 0 120px 30px var(--theme-ambient-glow-color, transparent);
-        transition: box-shadow 0.5s ease-in-out;
+        background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
         position: relative;
         overflow: hidden;
-      }
-      
-      /* Seamless Glass Panel */
-      .glass-panel {
-        background-color: var(--glass-bg);
-        backdrop-filter: blur(16px) saturate(120%);
-        -webkit-backdrop-filter: blur(16px) saturate(120%);
-        border: 1px solid var(--glass-border); /* Becomes transparent */
-        border-radius: 12px;
-        box-shadow: 0 10px 40px var(--glass-shadow);
-        position: relative;
-        overflow: hidden;
-      }
+    }
 
-      /* Subtle Scan Lines (replaces flicker) */
-      .glass-panel::before {
+    /* Polished Glass Panel */
+    .glass-panel {
+        background-color: var(--glass-bg);
+        backdrop-filter: blur(var(--glass-backdrop-blur)) saturate(var(--glass-backdrop-saturate));
+        -webkit-backdrop-filter: blur(var(--glass-backdrop-blur)) saturate(var(--glass-backdrop-saturate));
+        border: 1px solid var(--glass-border-color);
+        border-radius: var(--border-radius-main);
+        box-shadow: 0 8px 32px var(--glass-shadow);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .glass-panel::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 2px);
-        background-size: 100% 4px;
-        animation: scan-lines 12s linear infinite;
+        background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 100% 3px;
         pointer-events: none;
-        opacity: 0.5;
-      }
-
-      /* Sidebar specific styling for seamless layout */
-      .sidebar-glass {
+        opacity: 0.6;
+    }
+    
+    /* Sidebar specific styling */
+    .sidebar-glass {
         background-color: var(--sidebar-bg);
         backdrop-filter: blur(20px) saturate(150%);
         -webkit-backdrop-filter: blur(20px) saturate(150%);
-        border-right: none; /* No border */
-        box-shadow: 5px 0 50px var(--glass-shadow);
-        transition: background-color 0.5s ease-in-out;
-      }
-      
-      /* App-wide translucent hover effect */
-      .translucent-hover {
-        transition: background-color 0.2s ease-out;
-      }
-      .translucent-hover:hover {
-        background-color: rgba(255, 255, 255, 0.07);
-      }
+        border-right: 1px solid var(--glass-border-color);
+        box-shadow: 5px 0 50px rgba(0,0,0,0.6);
+    }
 
-      /* Animations */
-      @keyframes scan-lines {
-        from { background-position: 0 0; }
-        to { background-position: 0 100%; }
-      }
+    /* General interactive element styling */
+    .interactive-element {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: var(--border-radius-subtle);
+        transition: background-color var(--transition-speed-fast) ease-out, transform var(--transition-speed-fast) ease-out;
+    }
+    .interactive-element:hover {
+        background-color: rgba(0, 170, 255, 0.15);
+        transform: translateY(-2px);
+    }
+    .interactive-element.active {
+      background-color: rgba(0, 170, 255, 0.25);
+      box-shadow: 0 0 12px rgba(0, 170, 255, 0.4);
+    }
 
-      @keyframes fade-in {
-        from { opacity: 0; transform: translateY(8px); }
+    /* Animations */
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
-      }
-      .animate-fade-in {
-        animation: fade-in 0.4s ease-out forwards;
-      }
+    }
+    .animate-fade-in {
+        animation: fade-in var(--transition-speed-medium) ease-out forwards;
+    }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

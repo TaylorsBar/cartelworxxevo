@@ -3,9 +3,9 @@ import { useLiveConversation } from '../hooks/useLiveConversation';
 import MicrophoneIcon from '../components/icons/MicrophoneIcon';
 import SoundWaveIcon from '../components/icons/SoundWaveIcon';
 import { useVehicleStore } from '../store/useVehicleStore';
-import { ConnectionStatus, DTCInfo, GroundedResponse } from '../types';
-import GlassCard from '../components/Header'; // Repurposed for GlassCard
-import DataCard from '../components/StatCard'; // Repurposed for DataCard
+import { ConnectionStatus, DTC, GroundedResponse } from '../types';
+import GlassCard from '../components/Header';
+import DataCard from '../components/StatCard';
 import { analyzeImage } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import CameraIcon from '../components/icons/CameraIcon';
@@ -125,10 +125,11 @@ const DTCScanner: React.FC = () => {
         scanForDTCs: state.scanForDTCs,
     }));
     
-    const severityStyles = {
+    const severityStyles: { [key: string]: { border: string; text: string } } = {
         Critical: { border: 'border-red-500', text: 'text-red-400' },
-        Warning: { border: 'border-yellow-500', text: 'text-yellow-400' },
-        Info: { border: 'border-blue-500', text: 'text-blue-400' },
+        High: { border: 'border-orange-500', text: 'text-orange-400' },
+        Medium: { border: 'border-yellow-500', text: 'text-yellow-400' },
+        Low: { border: 'border-blue-500', text: 'text-blue-400' },
     };
 
     return (
@@ -149,20 +150,23 @@ const DTCScanner: React.FC = () => {
             <div className="flex-grow mt-4 overflow-y-auto pr-2">
                 {error && <div className="text-red-400 bg-red-900/20 p-3 rounded-md">{error}</div>}
                 <div className="space-y-3">
-                    {dtcResults.map(dtc => (
-                        <div key={dtc.code} className={`p-3 rounded-md border-l-4 bg-base-800/50 ${severityStyles[dtc.severity].border}`}>
-                            <h3 className={`font-mono font-bold text-lg ${severityStyles[dtc.severity].text}`}>{dtc.code}</h3>
-                            <p className="text-gray-200 mt-1">{dtc.description}</p>
-                            {dtc.possibleCauses.length > 0 && (
-                                <div className="mt-2">
-                                    <h4 className="text-xs font-semibold text-gray-400">Potential Causes:</h4>
-                                    <ul className="list-disc list-inside text-sm text-gray-300 space-y-1 mt-1">
-                                        {dtc.possibleCauses.map((cause, i) => <li key={i}>{cause}</li>)}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                    {dtcResults.map(dtc => {
+                        const styles = severityStyles[dtc.severity] || severityStyles.Medium;
+                        return (
+                            <div key={dtc.code} className={`p-3 rounded-md border-l-4 bg-base-800/50 ${styles.border}`}>
+                                <h3 className={`font-mono font-bold text-lg ${styles.text}`}>{dtc.code}</h3>
+                                <p className="text-gray-200 mt-1">{dtc.description}</p>
+                                {dtc.potentialCauses && dtc.potentialCauses.length > 0 && (
+                                    <div className="mt-2">
+                                        <h4 className="text-xs font-semibold text-gray-400">Potential Causes:</h4>
+                                        <ul className="list-disc list-inside text-sm text-gray-300 space-y-1 mt-1">
+                                            {dtc.potentialCauses.map((cause: string, i: number) => <li key={i}>{cause}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                      {isScanning && (
                         <div className="flex justify-center items-center py-10">
                             <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 animate-spin border-t-[var(--theme-accent-primary)]"></div>
@@ -196,6 +200,7 @@ const DiagnosticsDeck: React.FC = () => {
 }
 
 const VisualInspector: React.FC = () => {
+    const { vehicle } = useVehicleStore();
     const [image, setImage] = useState<{ file: File; previewUrl: string } | null>(null);
     const [prompt, setPrompt] = useState('');
     const [analysis, setAnalysis] = useState<GroundedResponse | null>(null);
@@ -224,8 +229,8 @@ const VisualInspector: React.FC = () => {
         setAnalysis(null);
         setError('');
         try {
-            const result = await analyzeImage(image.file, prompt);
-            setAnalysis(result);
+            const result = await analyzeImage(image.file.toString(), vehicle);
+            setAnalysis({ text: result, chunks: [] });
         } catch (e: any) {
             setError(e.message || 'An error occurred during analysis.');
         } finally {

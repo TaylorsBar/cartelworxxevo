@@ -1,5 +1,4 @@
 
-
 export interface SensorDataPoint {
   time: number;
   rpm: number;
@@ -13,16 +12,13 @@ export interface SensorDataPoint {
   turboBoost: number;
   fuelPressure: number;
   oilPressure: number;
-  // New detailed OBD-II params for AI Engine
   shortTermFuelTrim: number;
   longTermFuelTrim: number;
   o2SensorVoltage: number;
   engineLoad: number;
-  // For Race Pack
   distance: number;
   longitudinalGForce: number;
   lateralGForce: number;
-  // For GPS
   latitude: number;
   longitude: number;
 }
@@ -39,7 +35,7 @@ export interface DiagnosticAlert {
   component: string;
   message: string;
   timestamp: string;
-  isFaultRelated?: boolean; // New field for Co-Pilot context
+  isFaultRelated?: boolean;
 }
 
 export interface MaintenanceRecord {
@@ -58,7 +54,6 @@ export interface ChatMessage {
   chunks?: GroundingChunk[];
 }
 
-// Types for the new Predictive AI Engine
 export interface PredictiveIssue {
     component: string;
     rootCause: string;
@@ -67,7 +62,6 @@ export interface PredictiveIssue {
     tsbs?: string[];
 }
 
-// FIX: Added PredictiveAnalysisResult to type the response from the AI worker.
 export interface PredictiveAnalysisResult {
     timelineEvents?: TimelineEvent[];
     error?: string;
@@ -78,32 +72,30 @@ export interface TimelineEvent {
     id:string;
     level: AlertLevel;
     title: string;
-    timeframe: string; // e.g., "Immediate", "Next 3 months", "Within 5000 miles"
+    timeframe: string; 
     details: PredictiveIssue;
 }
 
-// New types for Component Health Scoring
 export interface ComponentHealth {
-  componentName: string; // e.g., 'Front Brake Pads'
-  healthScore: number; // 0-100
-  rulEstimate: string; // e.g., 'Approx. 8,500 miles'
+  componentName: string; 
+  healthScore: number; 
+  rulEstimate: string; 
   status: 'Good' | 'Moderate Wear' | 'Service Soon' | 'Critical';
-  analysisSummary: string; // AI-generated summary
+  analysisSummary: string; 
 }
 
 export interface ComponentHealthAnalysisResult {
     components: ComponentHealth[];
 }
 
-
-// Types for the new AI Tuning Assistant
-export interface TuningSuggestion {
-  suggestedParams: {
+export interface TuningParams {
     fuelMap: number;
     ignitionTiming: number[][];
     boostPressure: number[][];
-    boostPressureOffset?: number;
-  };
+}
+
+export interface TuningSuggestion {
+  suggestedParams: TuningParams & { boostPressureOffset?: number };
   analysis: {
     predictedGains: string;
     potentialRisks: string;
@@ -112,8 +104,11 @@ export interface TuningSuggestion {
   };
 }
 
+export interface SafetyReport {
+    safetyScore: number;
+    warnings: string[];
+}
 
-// Types for Security Audit Trail
 export enum AuditEvent {
     Login = 'User Login',
     AiAnalysis = 'AI Analysis',
@@ -131,7 +126,6 @@ export interface AuditLogEntry {
   status: 'Success' | 'Failure';
 }
 
-// Types for AR Assistant
 export enum IntentAction {
   ShowComponent = 'SHOW_COMPONENT',
   QueryService = 'QUERY_SERVICE',
@@ -141,7 +135,7 @@ export enum IntentAction {
 
 export interface VoiceCommandIntent {
   intent: IntentAction;
-  component?: string; // e.g., 'o2-sensor', 'map-sensor'
+  component?: string; 
   confidence: number;
 }
 
@@ -153,7 +147,6 @@ export interface ComponentHotspot {
   status: 'Normal' | 'Warning' | 'Failing';
 }
 
-// Types for Hedera DLT Integration
 export enum HederaEventType {
     Maintenance = 'Maintenance',
     Tuning = 'AI Tuning',
@@ -167,10 +160,9 @@ export interface HederaRecord {
     vin: string;
     summary: string;
     hederaTxId: string;
-    dataHash: string; // The hash of the off-chain data
+    dataHash: string; 
 }
 
-// Types for Race Pack
 export interface GpsPoint {
     latitude: number;
     longitude: number;
@@ -178,7 +170,7 @@ export interface GpsPoint {
 
 export interface LapTime {
     lap: number;
-    time: number; // in milliseconds
+    time: number; 
 }
 
 export interface RaceSession {
@@ -188,14 +180,12 @@ export interface RaceSession {
     data: SensorDataPoint[];
     lapTimes: LapTime[];
     gpsPath: GpsPoint[];
-    // Standard benchmarks
     zeroToHundredKmhTime: number | null;
     zeroToSixtyMphTime: number | null;
     sixtyToHundredThirtyMphTime: number | null;
     hundredToTwoHundredKmhTime: number | null;
     quarterMileTime: number | null;
     quarterMileSpeed: number | null;
-    // Internal state for benchmark calculations
     _internal: {
         startDataPoint: SensorDataPoint | null;
         crossingTimes: { [key: string]: number | null };
@@ -235,23 +225,9 @@ export interface Leaderboard {
 
 export type UnitSystem = 'metric' | 'imperial';
 
-// Types for Grounded AI responses
 export interface GroundingChunk {
-  web?: {
-    uri?: string;
-    title?: string;
-  };
-  maps?: {
-    uri: string;
-    title: string;
-    placeAnswerSources?: {
-        reviewSnippets: {
-            text: string;
-            author: string;
-            uri: string;
-        }[]
-    }[]
-  };
+    chunk: string;
+    source: string;
 }
 
 export interface GroundedResponse {
@@ -266,14 +242,20 @@ export enum ConnectionStatus {
   ERROR = 'Error',
 }
 
-export interface DTCInfo {
+export interface DTC {
     code: string;
     description: string;
-    severity: 'Info' | 'Warning' | 'Critical';
-    possibleCauses: string[];
+    severity: 'Info' | 'Warning' | 'Critical' | 'Low' | 'Medium' | 'High';
+    potentialCauses: string[];
+    remedy: string;
 }
 
-// Types for OEM Diagnostic Profiles
+export interface VehicleData {
+    make: string;
+    model: string;
+    year: number;
+}
+
 export type DidDecodeMethod = 
   | 'ascii'
   | 'u8'
@@ -299,7 +281,6 @@ export interface OemProfile {
   dids: Record<string, Did>;
 }
 
-// Types for Training & Certification
 export type TrainingModuleId =
   | 'obd-basics'
   | 'dtc-diagnostics'

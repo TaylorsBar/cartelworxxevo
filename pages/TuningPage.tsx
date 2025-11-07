@@ -1,11 +1,10 @@
 
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useVehicleStore } from '../store/useVehicleStore';
 import { getTuningSuggestion, analyzeTuneSafety, getTuningChatResponse } from '../services/geminiService';
-import { TuningSuggestion, ChatMessage, AuditEvent, HederaEventType } from '../types';
+import { TuningSuggestion, ChatMessage, AuditEvent, HederaEventType, TuningParams, VehicleData } from '../types';
 import TuningSlider from '../components/tuning/TuningSlider';
-import InteractiveTuningMap from '../components/tachometers/ClassicTachometer';
+import TuningMap3D from '../components/tuning/TuningMap3D';
 import SparklesIcon from '../components/icons/SparklesIcon';
 import ReactMarkdown from 'react-markdown';
 import RealtimeMetrics from './TuningSandbox';
@@ -18,21 +17,21 @@ const LOAD_AXIS = ['20', '30', '40', '50', '60', '70', '80', '100'];
 const generateDefaultMap = (baseValue: number): number[][] => 
     Array(LOAD_AXIS.length).fill(0).map(() => Array(RPM_AXIS.length).fill(baseValue));
 
-const DEFAULT_TUNE = {
+const DEFAULT_TUNE: TuningParams = {
     fuelMap: 0,
     ignitionTiming: generateDefaultMap(25),
     boostPressure: generateDefaultMap(0.5),
 };
 
 const TuningPage: React.FC = () => {
-    const { latestData, addAuditEvent, addHederaRecord } = useVehicleStore(state => ({
-        latestData: state.latestData,
+    const { vehicle, addAuditEvent, addHederaRecord } = useVehicleStore(state => ({
+        vehicle: state.vehicle,
         addAuditEvent: state.addAuditEvent,
         addHederaRecord: state.addHederaRecord,
     }));
     const isUnlocked = useTrainingStore(state => state.isUnlocked('advanced-performance'));
 
-    const [currentTune, setCurrentTune] = useState(DEFAULT_TUNE);
+    const [currentTune, setCurrentTune] = useState<TuningParams>(DEFAULT_TUNE);
     const [boostPressureOffset, setBoostPressureOffset] = useState(0);
     const [activeTab, setActiveTab] = useState<'fuel' | 'ignition' | 'boost'>('ignition');
     const [aiIsLoading, setAiIsLoading] = useState(false);
@@ -108,7 +107,7 @@ const TuningPage: React.FC = () => {
         setAiChat(prev => [...prev, userMessage]);
         addAuditEvent(AuditEvent.AiAnalysis, `Requested AI tuning suggestion for "${goal}".`);
         try {
-            const suggestion = await getTuningSuggestion(goal, latestData, currentTune, boostPressureOffset);
+            const suggestion = await getTuningSuggestion(goal, vehicle, currentTune, boostPressureOffset);
             applySuggestion(suggestion, goal);
         } catch (e) {
             const error = e instanceof Error ? e.message : "An unknown error occurred.";
@@ -126,8 +125,7 @@ const TuningPage: React.FC = () => {
         setAiChat(prev => [...prev, userMessage]);
         addAuditEvent(AuditEvent.AiAnalysis, `Requested tune safety analysis.`);
         try {
-            const { ignitionTiming, boostPressure } = currentTune;
-            const report = await analyzeTuneSafety({ ignitionTiming, boostPressure }, boostPressureOffset, latestData);
+            const report = await analyzeTuneSafety(currentTune, boostPressureOffset, vehicle);
             setSafetyReport({ score: report.safetyScore, warnings: report.warnings });
             let safetyMessage = `**Safety Analysis Complete**\n- **Safety Score:** ${report.safetyScore}/100\n`;
             if (report.warnings.length > 0) {
@@ -157,8 +155,7 @@ const TuningPage: React.FC = () => {
         setAiIsLoading(true);
         
         try {
-            const { ignitionTiming, boostPressure } = currentTune;
-            const response = await getTuningChatResponse(aiChatInput, {ignitionTiming, boostPressure}, boostPressureOffset, latestData);
+            const response = await getTuningChatResponse(aiChatInput, currentTune, boostPressureOffset, vehicle);
             const aiMessage: ChatMessage = { id: (Date.now() + 1).toString(), sender: 'ai', text: response };
             setAiChat(prev => [...prev, aiMessage]);
         } catch (e) {
@@ -224,10 +221,10 @@ const TuningPage: React.FC = () => {
                 
                 <div className="flex-grow mt-2 overflow-y-auto">
                     <div>
-                        {activeTab === 'ignition' && <InteractiveTuningMap title="Ignition Timing (deg BTDC)" data={currentTune.ignitionTiming} xAxisLabels={RPM_AXIS} yAxisLabels={LOAD_AXIS} onChange={(r, c, v) => handleMapChange('ignitionTiming', r, c, v)} />}
+                        {activeTab === 'ignition' && <TuningMap3D title="Ignition Timing (deg BTDC)" data={currentTune.ignitionTiming} xAxisLabels={RPM_AXIS} yAxisLabels={LOAD_AXIS} onChange={(r, c, v) => handleMapChange('ignitionTiming', r, c, v)} />}
                         {activeTab === 'boost' && (
                             <div>
-                                <InteractiveTuningMap 
+                                <TuningMap3D 
                                     title="Effective Boost Pressure Target (bar)" 
                                     data={displayBoostMap} 
                                     xAxisLabels={RPM_AXIS} 

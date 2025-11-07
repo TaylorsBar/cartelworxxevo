@@ -1,13 +1,11 @@
 import { create } from 'zustand';
-import { SensorDataPoint, TimelineEvent, ConnectionStatus, MaintenanceRecord, AuditLogEntry, HederaRecord, AuditEvent, HederaEventType, DTCInfo } from '../types';
+import { SensorDataPoint, TimelineEvent, ConnectionStatus, MaintenanceRecord, AuditLogEntry, HederaRecord, AuditEvent, HederaEventType, DTC, VehicleData } from '../types';
 import { obdService } from '../services/obdService';
 import { getDTCInfo } from '../services/geminiService';
 
-// --- Constants ---
 const MAX_DATA_POINTS = 500;
 const RPM_IDLE = 800;
 
-// --- Store State Definition ---
 interface VehicleState {
   data: SensorDataPoint[];
   latestData: SensorDataPoint;
@@ -22,8 +20,9 @@ interface VehicleState {
   auditLog: AuditLogEntry[];
   hederaLog: HederaRecord[];
   isScanningDTCs: boolean;
-  dtcResults: DTCInfo[];
+  dtcResults: DTC[];
   dtcError: string | null;
+  vehicle: VehicleData | null;
 }
 
 interface VehicleActions {
@@ -31,14 +30,14 @@ interface VehicleActions {
   triggerGaugeSweep: () => void;
   connectToVehicle: () => void;
   disconnectFromVehicle: () => void;
-  addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'verified' | 'isAiRecommendation' | 'date'>) => void;
+  addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'verified' | 'date'>) => void;
   addAuditEvent: (event: AuditEvent, description: string, status?: 'Success' | 'Failure') => void;
   addHederaRecord: (eventType: HederaEventType, summary: string) => void;
   scanForDTCs: () => Promise<void>;
+  setVehicle: (vehicle: VehicleData) => void;
 }
 
-// --- LocalStorage Persistence ---
-const loadFromStorage = <T>(key: string, defaultValue: T): T => {
+const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
     try {
         const item = localStorage.getItem(key);
         return item ? JSON.parse(item) : defaultValue;
@@ -48,7 +47,7 @@ const loadFromStorage = <T>(key: string, defaultValue: T): T => {
     }
 };
 
-const saveToStorage = <T>(key: string, value: T) => {
+const saveToStorage = <T,>(key: string, value: T) => {
     try {
         localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
@@ -56,7 +55,6 @@ const saveToStorage = <T>(key: string, value: T) => {
     }
 };
 
-// --- Initial State ---
 const generateInitialData = (): SensorDataPoint[] => {
   const data: SensorDataPoint[] = [];
   const now = Date.now();
@@ -79,21 +77,20 @@ const initialState: VehicleState = {
   isGaugeSweeping: false,
   deviceName: null,
   errorMessage: null,
-  maintenanceLog: loadFromStorage<MaintenanceRecord[]>('cartelworx_maintenance_log', []),
+  maintenanceLog: loadFromStorage<MaintenanceRecord[]>('cartelworxx_maintenance_log', []),
   auditLog: loadFromStorage<AuditLogEntry[]>('cartelworx_audit_log', []),
   hederaLog: loadFromStorage<HederaRecord[]>('cartelworx_hedera_log', []),
   isScanningDTCs: false,
   dtcResults: [],
   dtcError: null,
+  vehicle: loadFromStorage<VehicleData | null>('cartelworx_vehicle_data', null),
 };
 
-// --- Zustand Store Creation ---
 export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) => ({
   ...initialState,
   setTimelineEvents: (events) => set({ timelineEvents: events }),
   triggerGaugeSweep: () => {
     set({ isGaugeSweeping: true });
-    // Duration should be long enough for sweep up and down animations
     setTimeout(() => {
       set({ isGaugeSweeping: false });
     }, 1400); 
@@ -113,8 +110,8 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
           ...record,
           id: Date.now().toString(),
           date: new Date().toISOString().split('T')[0],
-          verified: false, // Can be changed later
-          isAiRecommendation: false, // User-added records are not AI recommendations
+          verified: false,
+          isAiRecommendation: record.isAiRecommendation || false,
       };
       set(state => {
           const newLog = [newRecord, ...state.maintenanceLog];
@@ -162,16 +159,18 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
       const codes = await obdService.fetchDTCs();
       if (codes.length === 0) {
         set({
-          dtcResults: [{ 
-            code: "P0000", 
-            description: "No Diagnostic Trouble Codes found in the system.", 
-            severity: "Info", 
-            possibleCauses: [] 
+          dtcResults: [{
+            code: "P0000",
+            description: "No Diagnostic Trouble Codes found in the system.",
+            severity: "Low",
+            potentialCauses: [],
+            remedy: "",
           }],
         });
         get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. No faults found.`);
       } else {
-        const results = await Promise.all(codes.map(code => getDTCInfo(code)));
+        const vehicleData = get().vehicle;
+        const results = await Promise.all(codes.map(code => getDTCInfo(code, vehicleData ?? undefined)));
         set({ dtcResults: results });
         get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. Found codes: ${codes.join(', ')}`);
         if (results.some(r => r.severity === 'Critical')) {
@@ -186,9 +185,13 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
       set({ isScanningDTCs: false });
     }
   },
+  setVehicle: (vehicle: VehicleData) => {
+      set({ vehicle });
+      saveToStorage('cartelworx_vehicle_data', vehicle);
+      get().addAuditEvent(AuditEvent.DataSync, `Vehicle profile set to ${vehicle.year} ${vehicle.make} ${vehicle.model}.`);
+  }
 }));
 
-// --- OBD Service Subscription ---
 obdService.subscribe(
   (status: ConnectionStatus, deviceName: string | null, error?: string) => {
     useVehicleStore.setState({ 
@@ -210,7 +213,7 @@ obdService.subscribe(
   },
   (update: Partial<SensorDataPoint>) => {
     const { isSimulating, data, latestData } = useVehicleStore.getState();
-    if (isSimulating || !latestData) return; // Ignore OBD data if simulating or store not ready
+    if (isSimulating || !latestData) return;
 
     const now = Date.now();
     const mergedData: SensorDataPoint = { ...latestData, ...update, time: now };
@@ -232,20 +235,19 @@ obdService.subscribe(
   }
 );
 
-// --- Simulation Manager ---
 const simulationManager = {
-  UPDATE_INTERVAL_MS: 100, // Slower interval for less intensive simulation
+  UPDATE_INTERVAL_MS: 100,
   RPM_MAX: 8000,
   GEAR_RATIOS: [0, 3.6, 2.1, 1.4, 1.0, 0.8, 0.6],
   
   simState: {
-    vehicleState: 0 as number, // 0: Idle, 1: Accelerating, 2: Cruising, 3: Decelerating
+    vehicleState: 0 as number, 
     stateTimeout: 0,
     lastUpdate: Date.now(),
     gpsDataRef: null as { latitude: number; longitude: number; speed: number | null } | null,
     watcherId: null as number | null,
     intervalId: null as number | null,
-    simGpsAngle: 0, // Vehicle's bearing for simulation
+    simGpsAngle: 0, 
   },
 
   stop() {
@@ -257,7 +259,6 @@ const simulationManager = {
       navigator.geolocation.clearWatch(this.simState.watcherId);
       this.simState.watcherId = null;
     }
-    // FIX: Clear the GPS data reference to prevent holding onto stale data and fix a memory leak.
     this.simState.gpsDataRef = null;
   },
 
@@ -292,14 +293,12 @@ const simulationManager = {
       const currentGpsData = this.simState.gpsDataRef;
 
       if (currentGpsData?.speed != null && currentGpsData.speed > 0.5) {
-        // Use real GPS data if available and moving
-        speed = currentGpsData.speed * 3.6; // m/s to km/h
+        speed = currentGpsData.speed * 3.6;
         latitude = currentGpsData.latitude;
         longitude = currentGpsData.longitude;
         if (speed < 20) gear = 1; else if (speed < 40) gear = 2; else if (speed < 70) gear = 3; else if (speed < 100) gear = 4; else if (speed < 130) gear = 5; else gear = 6;
         rpm = speed > 1 ? RPM_IDLE + (1500 * (gear-1)) + (speed % 30) * 100 : RPM_IDLE;
       } else {
-        // Fallback to simulated vehicle behavior
         if (now > this.simState.stateTimeout) {
             this.simState.vehicleState = (this.simState.vehicleState + Math.floor(Math.random() * 2) + 1) % 4;
             this.simState.stateTimeout = now + 3000 + Math.random() * 5000;
@@ -312,13 +311,10 @@ const simulationManager = {
         }
         speed = (rpm / (this.GEAR_RATIOS[gear] * 300)) * (1 - (1/gear)) * 10;
         
-        // --- Simulated GPS Path Logic ---
-        // Creates a plausible, curved path when real GPS is unavailable
         if (speed > 1 && deltaTimeSeconds > 0) {
             const distanceMovedMeters = (speed * (1000/3600)) * deltaTimeSeconds;
             const earthRadiusMeters = 6371000;
             
-            // Gently curve the path over time
             this.simState.simGpsAngle = (this.simState.simGpsAngle + (0.5 * deltaTimeSeconds)) % 360;
             const bearingRad = this.simState.simGpsAngle * Math.PI / 180;
             
@@ -372,5 +368,4 @@ const simulationManager = {
   }
 };
 
-// Start the simulation by default.
 simulationManager.start();

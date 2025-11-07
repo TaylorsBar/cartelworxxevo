@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { getCoPilotResponse } from '../services/geminiService';
-import { DiagnosticAlert, AlertLevel } from '../types';
+import { DiagnosticAlert, AlertLevel, GroundingChunk } from '../types';
 import { useVehicleStore } from '../store/useVehicleStore';
 import { MOCK_ALERTS } from './Alerts';
 import MicrophoneIcon from './icons/MicrophoneIcon';
@@ -16,15 +16,17 @@ enum CoPilotState {
 }
 
 const CoPilot: React.FC = () => {
-  const { latestData, hasActiveFault } = useVehicleStore(state => ({
+  const { latestData, hasActiveFault, vehicle } = useVehicleStore(state => ({
     latestData: state.latestData,
     hasActiveFault: state.hasActiveFault,
+    vehicle: state.vehicle,
   }));
 
   const [state, setState] = useState<CoPilotState>(CoPilotState.Idle);
   const [userTranscript, setUserTranscript] = useState('');
   const [lastCommand, setLastCommand] = useState('');
   const [aiResponse, setAiResponse] = useState('');
+  const [groundingChunks, setGroundingChunks] = useState<GroundingChunk[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [announcedAlertIds, setAnnouncedAlertIds] = useState<Set<string>>(new Set());
 
@@ -33,6 +35,13 @@ const CoPilot: React.FC = () => {
   const activeAlerts = MOCK_ALERTS.filter(alert => {
     return !alert.isFaultRelated || hasActiveFault;
   });
+
+  const handleAiResponse = useCallback((response: string, chunks?: GroundingChunk[]) => {
+    setAiResponse(response);
+    setGroundingChunks(chunks || []);
+    setState(CoPilotState.Speaking);
+    speak(response, () => setState(CoPilotState.Idle));
+  }, [speak]);
 
   useEffect(() => {
     const newCriticalAlerts = activeAlerts.filter(
@@ -46,55 +55,47 @@ const CoPilot: React.FC = () => {
       setAiResponse(announcement);
       setIsOpen(true);
       setState(CoPilotState.Speaking);
-      speak(announcement);
+      speak(announcement, () => setState(CoPilotState.Idle));
 
       setAnnouncedAlertIds(prev => new Set(prev).add(alertToAnnounce.id));
     }
-  }, [activeAlerts, announcedAlertIds, isSpeaking, speak, state]);
-
-  const handleAiResponse = useCallback((response: string) => {
-    setAiResponse(response);
-    setState(CoPilotState.Speaking);
-    speak(response);
-  }, [speak]);
+  }, [activeAlerts, announcedAlertIds, isSpeaking, speak, state, handleAiResponse]);
 
   const processCommand = useCallback(async (command: string) => {
+    if (!command) return;
     setUserTranscript(command);
     setLastCommand(command);
     setState(CoPilotState.Thinking);
     setAiResponse('');
-    const response = await getCoPilotResponse(command, latestData, activeAlerts);
-    handleAiResponse(response);
-  }, [latestData, activeAlerts, handleAiResponse]);
+    setGroundingChunks([]);
+    const { response, groundingChunks } = await getCoPilotResponse([{ sender: 'user', text: command }], vehicle ?? undefined);
+    handleAiResponse(response, groundingChunks);
+  }, [vehicle, handleAiResponse]);
 
-  const { isListening, startListening, stopListening, hasSupport, error: speechError } = useSpeechRecognition(processCommand);
+  const { isListening, startListening, stopListening, hasSupport, error: speechError } = useSpeechRecognition({ onTranscript: processCommand });
 
   useEffect(() => {
     if (speechError) {
       setState(CoPilotState.Idle);
       setIsOpen(true);
       if (speechError === 'not-allowed') {
-        setAiResponse("Microphone access is required. Please enable it in browser settings.");
+        handleAiResponse("Microphone access is required. Please enable it in browser settings.");
       } else {
-        setAiResponse(`An error occurred: ${speechError}.`);
+        handleAiResponse(`An error occurred: ${speechError}.`);
       }
     }
-  }, [speechError]);
+  }, [speechError, handleAiResponse]);
   
   useEffect(() => {
     if (isListening) setState(CoPilotState.Listening);
     else if (state === CoPilotState.Listening) setState(CoPilotState.Idle);
   }, [isListening, state]);
   
-  useEffect(() => {
-    if (!isSpeaking && state === CoPilotState.Speaking) setState(CoPilotState.Idle);
-  }, [isSpeaking, state]);
-  
   const handleFabClick = () => {
     if (!hasSupport) {
         setIsOpen(true);
         setState(CoPilotState.Idle);
-        setAiResponse("Sorry, your browser doesn't support voice commands.");
+        handleAiResponse("Sorry, your browser doesn't support voice commands.");
         return;
     }
       
@@ -105,7 +106,7 @@ const CoPilot: React.FC = () => {
       stopListening();
       cancel();
       setState(CoPilotState.Idle);
-      setIsOpen(false);
+      if(state !== CoPilotState.Speaking) setIsOpen(false);
     }
   };
 
@@ -164,9 +165,16 @@ const CoPilot: React.FC = () => {
             
             <div className="min-h-[56px] text-center">
                 {aiResponse && (
-                    <p className={`text-xl font-semibold ${aiResponse.startsWith('Critical Alert:') ? 'text-[var(--theme-accent-red)]' : 'text-[var(--theme-text-primary)]'}`}>
-                        {aiResponse}
-                    </p>
+                    <div>
+                      <p className={`text-xl font-semibold ${aiResponse.startsWith('Critical Alert:') ? 'text-[var(--theme-accent-red)]' : 'text-[var(--theme-text-primary)]'}`}>
+                          {aiResponse}
+                      </p>
+                      {groundingChunks.length > 0 && (
+                        <div className="mt-2 text-xs text-gray-400">
+                          <p>Based on: {groundingChunks.map(c => c.source).join(', ')}</p>
+                        </div>
+                      )}
+                    </div>
                 )}
             </div>
 

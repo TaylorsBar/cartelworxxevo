@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { IntentAction, ComponentHotspot, VoiceCommandIntent } from '../types';
+import { IntentAction, ComponentHotspot, VoiceCommandIntent, VehicleData } from '../types';
 import { getVoiceCommandIntent, generateComponentImage, getComponentTuningAnalysis } from '../services/geminiService';
 import { useVehicleStore } from '../store/useVehicleStore';
 import MicrophoneIcon from '../components/icons/MicrophoneIcon';
@@ -20,10 +20,10 @@ const MOCK_HOTSPOTS: ComponentHotspot[] = [
 ];
 
 const ARAssistant: React.FC = () => {
-    // FIX: Use maintenanceLog from the vehicle store instead of non-existent mock data.
-    const { latestData, maintenanceLog } = useVehicleStore(state => ({
+    const { latestData, maintenanceLog, vehicle } = useVehicleStore(state => ({
         latestData: state.latestData,
         maintenanceLog: state.maintenanceLog,
+        vehicle: state.vehicle,
     }));
     const [isConnecting, setIsConnecting] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
@@ -69,9 +69,7 @@ const ARAssistant: React.FC = () => {
             streamRef.current = stream;
             if (videoRef.current) {
                 const video = videoRef.current;
-                // Set up the event listener *before* setting the source to avoid race conditions.
                 video.onloadedmetadata = () => {
-                    // The play() method returns a promise which should be handled for robust error checking.
                     video.play().then(() => {
                         setIsConnected(true);
                         setAssistantMessage("AR Link active. Point your camera at a component or use voice commands.");
@@ -83,7 +81,6 @@ const ARAssistant: React.FC = () => {
                 };
                 video.srcObject = stream;
             } else {
-              // This case should not happen with the new rendering logic, but is kept as a safeguard.
               console.error("Video ref not found, cannot start AR stream.");
               setAssistantMessage("An internal error occurred: Video component not ready.");
               setIsConnected(false);
@@ -101,7 +98,6 @@ const ARAssistant: React.FC = () => {
         }
     };
     
-    // Cleanup effect to stop the camera stream when the component unmounts
     useEffect(() => {
         return () => {
             if (streamRef.current) {
@@ -115,7 +111,7 @@ const ARAssistant: React.FC = () => {
         setIsListening(false);
         setAssistantMessage("Thinking...");
         setHighlightedComponent(null); // Clear previous highlight
-        const result: VoiceCommandIntent = await getVoiceCommandIntent(command);
+        const result: VoiceCommandIntent = await getVoiceCommandIntent(command, vehicle);
 
         if (result.confidence < 0.7) {
             setAssistantMessage("I'm not quite sure what you mean. Could you try rephrasing?");
@@ -147,7 +143,6 @@ const ARAssistant: React.FC = () => {
         }
     };
     
-    // Effect to trigger AI inspection when a component is highlighted
     useEffect(() => {
         const inspectComponent = async () => {
             if (!highlightedComponent) {
@@ -167,10 +162,9 @@ const ARAssistant: React.FC = () => {
             setInspectionResult(null); // Clear previous results
             
             try {
-                // Fetch diagram and analysis in parallel
                 const [imageUrl, analysis] = await Promise.all([
-                    generateComponentImage(componentData.name),
-                    getComponentTuningAnalysis(componentData.name, latestData)
+                    generateComponentImage(componentData.name, vehicle),
+                    getComponentTuningAnalysis(componentData.name, vehicle)
                 ]);
                 setInspectionResult({ imageUrl, analysis, error: null });
             } catch (error) {
@@ -186,7 +180,7 @@ const ARAssistant: React.FC = () => {
         };
 
         inspectComponent();
-    }, [highlightedComponent, latestData, isConnected]);
+    }, [highlightedComponent, vehicle, isConnected]);
 
 
     const handleListen = () => {
@@ -257,7 +251,6 @@ const ARAssistant: React.FC = () => {
             );
         }
         
-        // Default message when not inspecting
         return <p className="text-gray-300 text-center flex-grow flex items-center justify-center">{assistantMessage}</p>;
     };
 
@@ -268,7 +261,6 @@ const ARAssistant: React.FC = () => {
                 <h1 className="text-xl font-bold text-gray-100 font-display border-b border-[var(--theme-accent-primary)]/30 pb-2 mb-4">Augmented Reality Assistant</h1>
 
                 <div className="flex-grow relative engine-3d-container bg-black">
-                    {/* Video element is now always in the DOM to ensure ref is available */}
                     <video
                         ref={videoRef}
                         playsInline

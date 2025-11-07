@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useVehicleStore } from '../store/useVehicleStore';
 import { getPredictiveAnalysis, getCrewChiefResponse, getRouteScoutResponse, getComponentHealthAnalysis } from '../services/geminiService';
-import { TimelineEvent, PredictiveAnalysisResult, ChatMessage, GroundingChunk, AuditEvent, ComponentHealth, ComponentHealthAnalysisResult } from '../types';
+import { TimelineEvent, PredictiveAnalysisResult, ChatMessage, GroundingChunk, AuditEvent, ComponentHealth, ComponentHealthAnalysisResult, VehicleData, MaintenanceRecord } from '../types';
 import RiskTimeline from '../components/RiskTimeline';
 import EngineIcon from '../components/icons/EngineIcon';
 import ShoppingCartIcon from '../components/icons/ShoppingCartIcon';
@@ -10,7 +10,7 @@ import ReactMarkdown from 'react-markdown';
 import GroundingSources from '../components/GroundingSources';
 import HeartIcon from '../components/icons/HeartIcon';
 import GlassCard from '../components/Header';
-import FeatureLock from '../components/DataBar';
+
 
 const ToggleSwitch: React.FC<{ checked: boolean, onChange: (checked: boolean) => void }> = ({ checked, onChange }) => (
     <button
@@ -45,12 +45,13 @@ const PredictiveTab: React.FC = () => {
     const [lastAnalysisTimestamp, setLastAnalysisTimestamp] = useState<Date | null>(null);
     const analysisIntervalRef = useRef<number | null>(null);
 
-    const { vehicleDataHistory, timelineEvents, setTimelineEvents, maintenanceLog, addAuditEvent } = useVehicleStore(state => ({
+    const { vehicleDataHistory, timelineEvents, setTimelineEvents, maintenanceLog, addAuditEvent, vehicle } = useVehicleStore(state => ({
         vehicleDataHistory: state.data,
         timelineEvents: state.timelineEvents,
         setTimelineEvents: state.setTimelineEvents,
         maintenanceLog: state.maintenanceLog,
         addAuditEvent: state.addAuditEvent,
+        vehicle: state.vehicle,
     }));
 
     const handleAnalyze = useCallback(async (isForced: boolean = false) => {
@@ -66,7 +67,7 @@ const PredictiveTab: React.FC = () => {
         addAuditEvent(AuditEvent.AiAnalysis, `Predictive analysis started (${isForced ? 'manual' : 'proactive'}).`);
 
         try {
-            const result = await getPredictiveAnalysis(vehicleDataHistory, maintenanceLog) as PredictiveAnalysisResult;
+            const result = await getPredictiveAnalysis(vehicleDataHistory, vehicle) as PredictiveAnalysisResult;
             if (result.error) {
                 setError(result.error);
                 setAnalysisStatus('error');
@@ -80,7 +81,7 @@ const PredictiveTab: React.FC = () => {
             setError(errorMessage);
             setAnalysisStatus('error');
         }
-    }, [analysisStatus, vehicleDataHistory, isProactiveMode, setTimelineEvents, maintenanceLog, addAuditEvent]);
+    }, [analysisStatus, vehicleDataHistory, isProactiveMode, setTimelineEvents, vehicle, addAuditEvent]);
 
     useEffect(() => {
         const stopInterval = () => {
@@ -190,20 +191,20 @@ const ComponentHealthTab: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const { vehicleDataHistory, maintenanceLog, addAuditEvent } = useVehicleStore(state => ({
+    const { vehicleDataHistory, vehicle, addAuditEvent } = useVehicleStore(state => ({
         vehicleDataHistory: state.data,
-        maintenanceLog: state.maintenanceLog,
+        vehicle: state.vehicle,
         addAuditEvent: state.addAuditEvent,
     }));
 
-    const handleRunAnalysis = async () => {
+    const handleRunAnalysis = async (component: string) => {
         setIsLoading(true);
         setError(null);
         addAuditEvent(AuditEvent.AiAnalysis, 'Component health analysis started.');
 
         try {
-            const result: ComponentHealthAnalysisResult = await getComponentHealthAnalysis(vehicleDataHistory, maintenanceLog);
-            setAnalysisResult(result.components || []);
+            const result: ComponentHealth = await getComponentHealthAnalysis(component, vehicleDataHistory, vehicle);
+            setAnalysisResult([result]);
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred.";
             setError(errorMessage);
@@ -219,7 +220,7 @@ const ComponentHealthTab: React.FC = () => {
                     <h2 className="text-lg font-semibold font-display">Component Health & RUL</h2>
                     <p className="text-sm text-gray-400">AI-powered Remaining Useful Life estimation for key components.</p>
                 </div>
-                <button onClick={handleRunAnalysis} disabled={isLoading} className="btn btn-primary">
+                <button onClick={() => handleRunAnalysis('All')} disabled={isLoading} className="btn btn-primary">
                     {isLoading ? 'Analyzing...' : 'Run Health Analysis'}
                 </button>
             </GlassCard>
@@ -248,8 +249,8 @@ const ComponentHealthTab: React.FC = () => {
 
 
 const AgentChatInterface: React.FC<{ agent: 'crew-chief' | 'route-scout' }> = ({ agent }) => {
-    const { latestData, addAuditEvent } = useVehicleStore(state => ({
-        latestData: state.latestData,
+    const { vehicle, addAuditEvent } = useVehicleStore(state => ({
+        vehicle: state.vehicle,
         addAuditEvent: state.addAuditEvent,
     }));
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -270,7 +271,7 @@ const AgentChatInterface: React.FC<{ agent: 'crew-chief' | 'route-scout' }> = ({
             subtitle: 'Intelligent route and location discovery.',
             placeholder: 'e.g., "Suggest a scenic route for a club convoy"',
             initialMessage: "I'm your Route Scout. Ask me to find interesting driving routes, circuits, or meet-up spots near your current location.",
-            handler: (query: string) => getRouteScoutResponse(query, { latitude: latestData.latitude, longitude: latestData.longitude }),
+            handler: getRouteScoutResponse,
         }
     };
     
@@ -288,14 +289,15 @@ const AgentChatInterface: React.FC<{ agent: 'crew-chief' | 'route-scout' }> = ({
         if (input.trim() === '' || isLoading) return;
 
         const userMessage: ChatMessage = { id: Date.now().toString(), text: input, sender: 'user' };
-        setMessages(prev => [...prev, userMessage]);
+        const newMessages = [...messages, userMessage];
+        setMessages(newMessages);
         setInput('');
         setIsLoading(true);
         addAuditEvent(AuditEvent.DiagnosticQuery, `${config.title} query: "${input}"`);
 
         try {
-            const aiResponse = await config.handler(input);
-            const aiMessage: ChatMessage = { id: (Date.now() + 1).toString(), text: aiResponse.text, sender: 'ai', chunks: aiResponse.chunks };
+            const response = await config.handler(newMessages, vehicle);
+            const aiMessage: ChatMessage = { id: (Date.now() + 1).toString(), text: response, sender: 'ai' };
             setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
             const errorMessage: ChatMessage = { id: (Date.now() + 1).toString(), text: "Sorry, I couldn't get a response. Please check your connection and try again.", sender: 'ai' };

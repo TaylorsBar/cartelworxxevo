@@ -1,9 +1,7 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRaceSession } from '../hooks/useRaceSession';
 import * as storage from '../services/storageService';
-import { SavedRaceSession, Leaderboard, LapTime } from '../types';
+import { SavedRaceSession, Leaderboard, LapTime, VehicleData } from '../types';
 import { getRaceAnalysis } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import HistoryIcon from '../components/icons/HistoryIcon';
@@ -54,9 +52,10 @@ const TabButton: React.FC<{ label: string; icon: React.ReactNode; isActive: bool
 const RacePack: React.FC = () => {
     const [activeTab, setActiveTab] = useState('live');
     const { session, startSession, stopSession, recordLap } = useRaceSession();
-    const { latestData, vehicleDataHistory } = useVehicleStore(state => ({
+    const { latestData, vehicleDataHistory, vehicle } = useVehicleStore(state => ({
         latestData: state.latestData,
-        vehicleDataHistory: state.data
+        vehicleDataHistory: state.data,
+        vehicle: state.vehicle
     }));
     const { convertSpeed, getSpeedUnit } = useUnitConversion();
     
@@ -131,7 +130,7 @@ const RacePack: React.FC = () => {
     const handleAnalyzeSession = async (sessionToAnalyze: SavedRaceSession) => {
         setAnalysisResult({ session: sessionToAnalyze, analysis: null, isLoading: true });
         try {
-            const result = await getRaceAnalysis(sessionToAnalyze);
+            const result = await getRaceAnalysis(sessionToAnalyze.data, vehicle);
             setAnalysisResult({ session: sessionToAnalyze, analysis: result, isLoading: false });
         } catch (e) {
             const errorMsg = e instanceof Error ? e.message : "An unknown error occurred.";
