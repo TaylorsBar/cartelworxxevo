@@ -38,7 +38,7 @@ const generateContent = async (prompt: string, json = true) => {
   });
   const text = result.response.text();
   if (json) {
-    const jsonMatch = text.match(/```json\\n(.*?)\\n```/s);
+    const jsonMatch = text.match(/```json\n(.*?)\n```/s);
     const jsonString = jsonMatch ? jsonMatch[1] : text;
     return JSON.parse(jsonString);
   }
@@ -112,7 +112,7 @@ export const analyzeTuneSafety = async (
     }
     \`\`\`
   `;
-  return generate.Content(prompt);
+  return generateContent(prompt);
 };
 
 export const getTuningChatResponse = async (
@@ -132,8 +132,8 @@ export const getTuningChatResponse = async (
 
 export const getCoPilotResponse = async (messages: any[], vehicle: VehicleData | undefined): Promise<{ response: string, groundingChunks?: GroundingChunk[]}> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    const history = messages.map(m => `**${m.sender}:** ${m.text}`).join('\\n');
-    const prompt = `This is a conversation with an AI copilot in a car dashboard. ${vehicleContext}.\\n\\n${history}\\n**AI:**`;
+    const history = messages.map(m => `**${m.sender}:** ${m.text}`).join('\n');
+    const prompt = `This is a conversation with an AI copilot in a car dashboard. ${vehicleContext}.\n\n${history}\n**AI:**`;
     const response = await generateContent(prompt, false) as string;
     return { response };
 }
@@ -184,15 +184,15 @@ export const getPredictiveAnalysis = async (data: any[], vehicle: VehicleData | 
 
 export const getCrewChiefResponse = async (messages: any[], vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\\n');
-    const prompt = `You are an AI race crew chief. This is a conversation with your driver on the track. ${vehicleContext}.\\n\\n${history}\\n**Crew Chief:**`;
+    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\n');
+    const prompt = `You are an AI race crew chief. This is a conversation with your driver on the track. ${vehicleContext}.\n\n${history}\n**Crew Chief:**`;
     return generateContent(prompt, false);
 }
 
 export const getRouteScoutResponse = async (messages: any[], vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\\n');
-    const prompt = `You are an AI route scout. You are helping a driver plan a route. ${vehicleContext}.\\n\\n${history}\\n**Route Scout:**`;
+    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\n');
+    const prompt = `You are an AI route scout. You are helping a driver plan a route. ${vehicleContext}.\n\n${history}\n**Route Scout:**`;
     return generateContent(prompt, false);
 }
 
@@ -234,7 +234,7 @@ export const getComponentTuningAnalysis = async (component: string, vehicle: Veh
 export const analyzeImage = async (image: string, vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
     // This would require a multi-modal model. Deferring full implementation.
-    return Promise.resolve(\`Image analysis is not fully implemented yet. ${vehicleContext}\`);
+    return Promise.resolve(`Image analysis is not fully implemented yet. ${vehicleContext}`);
 }
 
 export const generateHealthReport = async (data: any[], vehicle: VehicleData | undefined): Promise<string> => {
