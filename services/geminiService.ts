@@ -1,5 +1,5 @@
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { TuningParams, VehicleData, TuningSuggestion, SafetyReport, DTC, PredictiveAnalysisResult, ComponentHealth, GroundingChunk, MaintenanceRecord, FreezeFrameData, SensorData, DiagnosticAnalysis, PerformanceAnalysis, MaintenanceRecommendations } from '../types';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from \'@google/generative-ai\';
+import { TuningParams, VehicleData, TuningSuggestion, SafetyReport, DTC, PredictiveAnalysisResult, ComponentHealth, GroundingChunk, MaintenanceRecord, FreezeFrameData, SensorData, DiagnosticAnalysis, PerformanceAnalysis, MaintenanceRecommendations } from \'../types\';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 if (!API_KEY) {
@@ -8,11 +8,11 @@ if (!API_KEY) {
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 const model = genAI.getGenerativeModel({
-  model: 'gemini-1.5-flash-latest',
-  systemInstruction: `You are "KC", an expert AI automotive tuning assistant. Your goal is to help users safely extract performance and efficiency from their vehicles. You are integrated into a dashboard that provides real-time vehicle data.
+  model: \'gemini-1.5-flash-latest\',
+  systemInstruction: `You are \"KC\", an expert AI automotive tuning assistant. Your goal is to help users safely extract performance and efficiency from their vehicles. You are integrated into a dashboard that provides real-time vehicle data.
 
 Key Principles:
-1.  **Safety First:** Always prioritize vehicle and occupant safety. Avoid making risky suggestions. If a user asks for something dangerous (e.g., "max power no matter what"), refuse and explain the risks.
+1.  **Safety First:** Always prioritize vehicle and occupant safety. Avoid making risky suggestions. If a user asks for something dangerous (e.g., \"max power no matter what\"), refuse and explain the risks.
 2.  **Data-Driven:** Base your analysis and suggestions on the real-time sensor data provided.
 3.  **Context-Aware:** The user is interacting with a 3D tuning map. Your suggestions should be in the context of modifying ignition timing, boost pressure, and fuel maps.
 4.  **Clear & Concise:** Explain the reasoning behind your suggestions in a way that is easy for a knowledgeable enthusiast to understand. Use markdown for formatting.
@@ -21,7 +21,7 @@ Key Principles:
 
 const generateContent = async (prompt: string, json = true) => {
   const generationConfig = json ? {
-      responseMimeType: 'application/json',
+      responseMimeType: \'application/json\',
       temperature: 0.7,
       topP: 0.9,
   } : {
@@ -30,7 +30,7 @@ const generateContent = async (prompt: string, json = true) => {
   };
 
   const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    contents: [{ role: \'user\', parts: [{ text: prompt }] }],
     generationConfig,
     safetySettings: [
       { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
@@ -38,7 +38,7 @@ const generateContent = async (prompt: string, json = true) => {
   });
   const text = result.response.text();
   if (json) {
-    const jsonMatch = text.match(/```json\n(.*)\n```/s);
+    const jsonMatch = text.match(/```json\\n(.*)\\n```/s);
     const jsonString = jsonMatch ? jsonMatch[1] : text;
     return JSON.parse(jsonString);
   }
@@ -63,13 +63,13 @@ export const getTuningSuggestion = async (
 ): Promise<TuningSuggestion> => {
   const prompt = `
     ${getVehicleContextString(vehicle)}
-    User Goal: "${goal}"
+    User Goal: \"${goal}\"
     Current Tune:
     - Ignition Timing Map: ${JSON.stringify(currentTune.ignitionTiming)}
     - Boost Pressure Map: ${JSON.stringify(currentTune.boostPressure)}
     - Global Boost Offset: ${boostOffset.toFixed(2)} bar
 
-    Task: Generate a new tune to meet the user's goal. The new tune should be a modification of the current tune.
+    Task: Generate a new tune to meet the user\'s goal. The new tune should be a modification of the current tune.
     Your response must be a JSON object matching this schema:
     \'\'\'json
     {
@@ -132,8 +132,8 @@ export const getTuningChatResponse = async (
 
 export const getCoPilotResponse = async (messages: any[], vehicle: VehicleData | undefined): Promise<{ response: string, groundingChunks?: GroundingChunk[]}> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    const history = messages.map(m => `**${m.sender}:** ${m.text}`).join('\n');
-    const prompt = `This is a conversation with an AI copilot in a car dashboard. ${vehicleContext}.\n\n${history}\n**AI:**`;
+    const history = messages.map(m => `**${m.sender}:** ${m.text}`).join(\'\\n\');
+    const prompt = `This is a conversation with an AI copilot in a car dashboard. ${vehicleContext}.\\n\\n${history}\\n**AI:**`;
     const response = await generateContent(prompt, false) as string;
     return { response };
 }
@@ -184,15 +184,15 @@ export const getPredictiveAnalysis = async (data: any[], vehicle: VehicleData | 
 
 export const getCrewChiefResponse = async (messages: any[], vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\n');
-    const prompt = `You are an AI race crew chief. This is a conversation with your driver on the track. ${vehicleContext}.\n\n${history}\n**Crew Chief:**`;
+    const history = messages.map(m => `${m.sender}: ${m.text}`).join(\'\\n\');
+    const prompt = `You are an AI race crew chief. This is a conversation with your driver on the track. ${vehicleContext}.\\n\\n${history}\\n**Crew Chief:**`;
     return generateContent(prompt, false);
 }
 
 export const getRouteScoutResponse = async (messages: any[], vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\n');
-    const prompt = `You are an AI route scout. You are helping a driver plan a route. ${vehicleContext}.\n\n${history}\n**Route Scout:**`;
+    const history = messages.map(m => `${m.sender}: ${m.text}`).join(\'\\n\');
+    const prompt = `You are an AI route scout. You are helping a driver plan a route. ${vehicleContext}.\\n\\n${history}\\n**Route Scout:**`;
     return generateContent(prompt, false);
 }
 
@@ -217,25 +217,97 @@ export const getComponentHealthAnalysis = async (component: string, data: any[],
 }
 
 export const getVoiceCommandIntent = async (command: string, vehicle: VehicleData | undefined): Promise<any> => {
-    // This function is complex and its restoration is deferred.
-    return Promise.resolve({ intent: 'unknown' });
+    const vehicleContext = getVehicleContextString(vehicle);
+    const prompt = `
+    ${vehicleContext}
+    User voice command: "${command}"
+
+    Task: Interpret the user\'s command and return a structured intent.
+    The possible intents are: "show_dashboard", "run_diagnostics", "show_component_analysis", "get_tuning_suggestion", "unknown".
+    - For "show_component_analysis", the entity should be the component name (e.g., "turbocharger").
+    - For "get_tuning_suggestion", the entity should be the user\'s goal (e.g., "more power").
+
+    Your response must be a JSON object matching this schema:
+    \'\'\'json
+    {
+      "intent": "show_dashboard" | "run_diagnostics" | "show_component_analysis" | "get_tuning_suggestion" | "unknown",
+      "entities": {
+        "component_name"?: string,
+        "tuning_goal"?: string
+      }
+    }
+    \'\'\'
+  `;
+  return generateContent(prompt);
 }
 
 export const generateComponentImage = async (component: string, vehicle: VehicleData | undefined): Promise<any> => {
-    // This function is complex and its restoration is deferred.
-    return Promise.resolve({ imageUrl: '' });
+    // Placeholder function until a proper image generation model is available.
+    const vehicleName = vehicle ? `${vehicle.year}_${vehicle.make}_${vehicle.model}` : \'vehicle\';
+    const text = `${component}_for_${vehicleName}`.replace(/\s+/g, \'_\');
+    return Promise.resolve({ imageUrl: `https://via.placeholder.com/600x400.png?text=${text}` });
 }
 
 export const getComponentTuningAnalysis = async (component: string, vehicle: VehicleData | undefined): Promise<any> => {
-    // This function is complex and its restoration is deferred.
-    return Promise.resolve({ analysis: '' });
+    const vehicleContext = getVehicleContextString(vehicle);
+    const prompt = `
+    ${vehicleContext}
+    Component: "${component}"
+
+    Task: Provide a detailed tuning analysis for this component.
+    Your response must be a JSON object matching this schema:
+    \'\'\'json
+    {
+      "componentName": string,
+      "description": string, // What is this component and what is its role?
+      "tuningEffects": string, // How does tuning affect this component?
+      "risks": string, // What are the risks associated with tuning this component?
+      "relevantSensors": string[] // What sensors are important to monitor when tuning?
+    }
+    \'\'\'
+  `;
+  return generateContent(prompt);
 }
+
+async function urlToGenerativePart(url: string, mimeType: string) {
+  const response = await fetch(url);
+  const buffer = await response.arrayBuffer();
+  return {
+    inlineData: {
+      data: Buffer.from(buffer).toString("base64"),
+      mimeType
+    }
+  };
+}
+
 
 export const analyzeImage = async (image: string, vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    // This would require a multi-modal model. Deferring full implementation.
-    return Promise.resolve(\`Image analysis is not fully implemented yet. ${vehicleContext}\`);
+    const imagePart = await urlToGenerativePart(image, "image/jpeg");
+
+    const prompt = `
+    ${vehicleContext}
+    Image: [image attached]
+
+    Task: Analyze the attached image of a vehicle component.
+    1. Identify the component in the image.
+    2. Assess its current condition (e.g., new, used, damaged).
+    3. Suggest potential maintenance actions if needed.
+
+    Your response should be a concise textual description.
+    `;
+
+    const result = await model.generateContent({
+        contents: [{ role: \'user\', parts: [{ text: prompt }, imagePart] }],
+        generationConfig: {
+            temperature: 0.7,
+            topP: 0.9,
+        },
+    });
+
+    return result.response.text();
 }
+
 
 export const generateHealthReport = async (data: any[], vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
@@ -268,8 +340,8 @@ export async function analyzeDTC(
     Analyze this diagnostic trouble code for a ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}:
     
     DTC: ${dtcCode}
-    Engine: ${vehicleInfo.engine || 'VQ37VHR'}
-    Mileage: ${vehicleInfo.mileage || 'Unknown'}
+    Engine: ${vehicleInfo.engine || \'VQ37VHR\'}
+    Mileage: ${vehicleInfo.mileage || \'Unknown\'}
     Freeze Frame: ${JSON.stringify(freezeFrame)}
     
     Provide:
@@ -282,8 +354,8 @@ export async function analyzeDTC(
   `;
   
   const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.7, responseMimeType: 'application/json' }
+    contents: [{ role: \'user\', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.7, responseMimeType: \'application/json\' }
   });
   
   return JSON.parse(result.response.text());
@@ -294,7 +366,7 @@ export async function interpretLiveData(
   vehicleInfo: VehicleData
 ): Promise<PerformanceAnalysis> {
   // Real-time analysis of sensor readings for performance/health assessment
-  console.log('Interpreting live data for', vehicleInfo, sensorData);
+  console.log(\'Interpreting live data for\', vehicleInfo, sensorData);
   return Promise.resolve({
     performanceSummary: "Not yet implemented.",
     anomalies: [],
@@ -307,7 +379,7 @@ export async function suggestMaintenance(
   maintenanceHistory: MaintenanceRecord[]
 ): Promise<MaintenanceRecommendations> {
   // Predictive maintenance suggestions based on usage patterns
-  console.log('Suggesting maintenance for', vehicleInfo, maintenanceHistory);
+  console.log(\'Suggesting maintenance for\', vehicleInfo, maintenanceHistory);
   return Promise.resolve({
     recommendations: []
   });

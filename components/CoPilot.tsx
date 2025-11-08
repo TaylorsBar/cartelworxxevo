@@ -72,7 +72,7 @@ const CoPilot: React.FC = () => {
     handleAiResponse(response, groundingChunks);
   }, [vehicle, handleAiResponse]);
 
-  const { isListening, startListening, stopListening, hasSupport, error: speechError } = useSpeechRecognition({ onTranscript: processCommand });
+  const { isListening, startListening, stopListening, hasSupport, error: speechError } = useSpeechRecognition(processCommand);
 
   useEffect(() => {
     if (speechError) {
