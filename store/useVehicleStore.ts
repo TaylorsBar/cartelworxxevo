@@ -1,7 +1,11 @@
 import { create } from 'zustand';
-import { SensorDataPoint, TimelineEvent, ConnectionStatus, MaintenanceRecord, AuditLogEntry, HederaRecord, AuditEvent, HederaEventType, DTC, VehicleData } from '../types';
+import { SensorDataPoint, TimelineEvent, ConnectionStatus, MaintenanceRecord, AuditLogEntry, HederaRecord, AuditEvent, HederaEventType, DTC, VehicleData, TuningRecord } from '../types';
 import { obdService } from '../services/obdService';
 import { getDTCInfo } from '../services/geminiService';
+import { HederaService } from '../services/hederaService';
+import { db, auth } from '../services/firebase'; // Assuming firebase is configured for auth and firestore
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+
 
 const MAX_DATA_POINTS = 500;
 const RPM_IDLE = 800;
@@ -30,9 +34,9 @@ interface VehicleActions {
   triggerGaugeSweep: () => void;
   connectToVehicle: () => void;
   disconnectFromVehicle: () => void;
-  addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'verified' | 'date'>) => void;
+  addMaintenanceRecord: (record: Omit<MaintenanceRecord, 'id' | 'verified' | 'date'>) => Promise<void>;
   addAuditEvent: (event: AuditEvent, description: string, status?: 'Success' | 'Failure') => void;
-  addHederaRecord: (eventType: HederaEventType, summary: string) => void;
+  addHederaRecord: (record: MaintenanceRecord | TuningRecord, type: 'maintenance' | 'tuning') => Promise<void>;
   scanForDTCs: () => Promise<void>;
   setVehicle: (vehicle: VehicleData) => void;
 }
@@ -105,7 +109,7 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
     obdService.disconnect();
     get().addAuditEvent(AuditEvent.DataSync, 'Disconnected from vehicle OBD-II adapter.');
   },
-  addMaintenanceRecord: (record) => {
+    addMaintenanceRecord: async (record) => {
       const newRecord: MaintenanceRecord = {
           ...record,
           id: Date.now().toString(),
@@ -117,9 +121,9 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
           const newLog = [newRecord, ...state.maintenanceLog];
           saveToStorage('cartelworx_maintenance_log', newLog);
           get().addAuditEvent(AuditEvent.DataSync, `Maintenance record added: "${record.service}"`);
-          get().addHederaRecord(HederaEventType.Maintenance, `Service Added: ${record.service}`);
           return { maintenanceLog: newLog };
       });
+      await get().addHederaRecord(newRecord, 'maintenance');
   },
   addAuditEvent: (event, description, status: 'Success' | 'Failure' = 'Success') => {
       const newEntry: AuditLogEntry = {
@@ -136,27 +140,47 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
           return { auditLog: newLog };
       });
   },
-  addHederaRecord: (eventType, summary) => {
-      const newRecord: HederaRecord = {
-            id: `hedera-${Date.now()}`,
-            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-            eventType,
-            vin: 'JN1AZ00Z9ZT000123', // Mock VIN
-            summary,
-            hederaTxId: `0.0.12345@${Date.now() / 1000 | 0}.${Math.floor(Math.random() * 1e9)}`,
-            dataHash: 'mock-' + Math.random().toString(36).substring(7),
-      };
-       set(state => {
-          const newLog = [newRecord, ...state.hederaLog];
-          saveToStorage('cartelworx_hedera_log', newLog);
-          return { hederaLog: newLog };
-      });
+  addHederaRecord: async (record: MaintenanceRecord | TuningRecord, type: 'maintenance' | 'tuning') => {
+    if (!auth.currentUser) {
+        get().addAuditEvent('Hedera', 'Failed to log record to Hedera: User not authenticated.', 'Failure');
+        return;
+    }
+    const hederaService = new HederaService();
+    try {
+        await hederaService.initialize();
+        let transactionId: string;
+        if (type === 'maintenance') {
+            transactionId = await hederaService.logServiceRecord(record as MaintenanceRecord);
+        } else {
+            transactionId = await hederaService.logECUModification(record as TuningRecord);
+        }
+
+        const hederaRecord = { ...record, transactionId };
+
+        set(state => ({
+            hederaRecords: [...state.hederaRecords, hederaRecord]
+        }));
+
+        // Also save to Firestore for quick access
+        await addDoc(collection(db, 'hederaRecords'), {
+            ...record,
+            transactionId,
+            userId: auth.currentUser.uid,
+            timestamp: serverTimestamp()
+        });
+        get().addAuditEvent('Hedera', `Successfully logged ${type} record to Hedera. TxID: ${transactionId}`);
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('Hedera service error:', errorMessage);
+        get().addAuditEvent('Hedera', `Failed to log ${type} record to Hedera: ${errorMessage}`, 'Failure');
+    }
   },
   scanForDTCs: async () => {
     set({ isScanningDTCs: true, dtcError: null, dtcResults: [] });
     get().addAuditEvent(AuditEvent.DiagnosticQuery, 'Started ECU fault code scan.');
     try {
-      const codes = await obdService.fetchDTCs();
+      const codes = await obdService.readDTC();
       if (codes.length === 0) {
         set({
           dtcResults: [{
@@ -170,12 +194,9 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
         get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. No faults found.`);
       } else {
         const vehicleData = get().vehicle;
-        const results = await Promise.all(codes.map(code => getDTCInfo(code, vehicleData ?? undefined)));
+        const results = await Promise.all(codes.map(code => getDTCInfo(code.code, vehicleData ?? undefined)));
         set({ dtcResults: results });
-        get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. Found codes: ${codes.join(', ')}`);
-        if (results.some(r => r.severity === 'Critical')) {
-            get().addHederaRecord(HederaEventType.Diagnostic, `Critical DTCs found: ${results.filter(r => r.severity === 'Critical').map(r => r.code).join(', ')}`);
-        }
+        get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. Found codes: ${codes.map(c => c.code).join(', ')}`);
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred during scan.";
@@ -229,9 +250,8 @@ obdService.subscribe(
     const updatedData = [...data, mergedData];
     const slicedData = updatedData.length > MAX_DATA_POINTS
       ? updatedData.slice(updatedData.length - MAX_DATA_POINTS)
-      : updatedData;
-    
-    useVehicleStore.setState({ data: slicedData, latestData: mergedData });
+      {...}
+      useVehicleStore.setState({ data: slicedData, latestData: mergedData });
   }
 );
 

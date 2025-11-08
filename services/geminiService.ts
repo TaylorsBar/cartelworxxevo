@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { TuningParams, VehicleData, TuningSuggestion, SafetyReport, DTC, PredictiveAnalysisResult, ComponentHealth, GroundingChunk } from '../types';
+import { TuningParams, VehicleData, TuningSuggestion, SafetyReport, DTC, PredictiveAnalysisResult, ComponentHealth, GroundingChunk, MaintenanceRecord, FreezeFrameData, SensorData, DiagnosticAnalysis, PerformanceAnalysis, MaintenanceRecommendations } from '../types';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 if (!API_KEY) {
@@ -38,7 +38,7 @@ const generateContent = async (prompt: string, json = true) => {
   });
   const text = result.response.text();
   if (json) {
-    const jsonMatch = text.match(/```json\n(.*?)\n```/s);
+    const jsonMatch = text.match(/```json\\n(.*?)\\n```/s);
     const jsonString = jsonMatch ? jsonMatch[1] : text;
     return JSON.parse(jsonString);
   }
@@ -71,7 +71,7 @@ export const getTuningSuggestion = async (
 
     Task: Generate a new tune to meet the user's goal. The new tune should be a modification of the current tune.
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \\`\\`\\`json
     {
       "suggestedParams": {
         "ignitionTiming": number[][],
@@ -84,7 +84,7 @@ export const getTuningSuggestion = async (
         "educationalTip": string
       }
     }
-    \`\`\`
+    \\`\\`\\`
   `;
   return generateContent(prompt);
 };
@@ -105,12 +105,12 @@ export const analyzeTuneSafety = async (
     - Assign a safety score from 0 (dangerous) to 100 (very safe).
 
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \\`\\`\\`json
     {
       "safetyScore": number,
       "warnings": string[]
     }
-    \`\`\`
+    \\`\\`\\`
   `;
   return generateContent(prompt);
 };
@@ -132,8 +132,8 @@ export const getTuningChatResponse = async (
 
 export const getCoPilotResponse = async (messages: any[], vehicle: VehicleData | undefined): Promise<{ response: string, groundingChunks?: GroundingChunk[]}> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    const history = messages.map(m => `**${m.sender}:** ${m.text}`).join('\n');
-    const prompt = `This is a conversation with an AI copilot in a car dashboard. ${vehicleContext}.\n\n${history}\n**AI:**`;
+    const history = messages.map(m => `**${m.sender}:** ${m.text}`).join('\\n');
+    const prompt = `This is a conversation with an AI copilot in a car dashboard. ${vehicleContext}.\\n\\n${history}\\n**AI:**`;
     const response = await generateContent(prompt, false) as string;
     return { response };
 }
@@ -145,7 +145,7 @@ export const getDTCInfo = async (dtc: string, vehicle: VehicleData | undefined):
     DTC: ${dtc}
     Task: Provide information about this Diagnostic Trouble Code (DTC).
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \\`\\`\\`json
     {
         "code": "${dtc}",
         "description": string,
@@ -153,7 +153,7 @@ export const getDTCInfo = async (dtc: string, vehicle: VehicleData | undefined):
         "potentialCauses": string[],
         "remedy": string
     }
-    \`\`\`
+    \\`\\`\\`
     `;
     return generateContent(prompt);
 };
@@ -165,7 +165,7 @@ export const getPredictiveAnalysis = async (data: any[], vehicle: VehicleData | 
     Recent Vehicle Data: ${JSON.stringify(data.slice(-10))}
     Task: Analyze the recent vehicle data and predict potential issues.
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \\`\\`\\`json
     {
         "predictions": [
             {
@@ -177,22 +177,22 @@ export const getPredictiveAnalysis = async (data: any[], vehicle: VehicleData | 
             }
         ]
     }
-    \`\`\`
+    \\`\\`\\`
     `;
   return generateContent(prompt);
 };
 
 export const getCrewChiefResponse = async (messages: any[], vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\n');
-    const prompt = `You are an AI race crew chief. This is a conversation with your driver on the track. ${vehicleContext}.\n\n${history}\n**Crew Chief:**`;
+    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\\n');
+    const prompt = `You are an AI race crew chief. This is a conversation with your driver on the track. ${vehicleContext}.\\n\\n${history}\\n**Crew Chief:**`;
     return generateContent(prompt, false);
 }
 
 export const getRouteScoutResponse = async (messages: any[], vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
-    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\n');
-    const prompt = `You are an AI route scout. You are helping a driver plan a route. ${vehicleContext}.\n\n${history}\n**Route Scout:**`;
+    const history = messages.map(m => `${m.sender}: ${m.text}`).join('\\n');
+    const prompt = `You are an AI route scout. You are helping a driver plan a route. ${vehicleContext}.\\n\\n${history}\\n**Route Scout:**`;
     return generateContent(prompt, false);
 }
 
@@ -204,14 +204,14 @@ export const getComponentHealthAnalysis = async (component: string, data: any[],
     Recent Vehicle Data: ${JSON.stringify(data.slice(-20))}
     Task: Analyze the health of the specified component based on the recent data.
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \\`\\`\\`json
     {
         "component": "${component}",
         "healthScore": number, // 0-100
-        "analysis": string, // Textual analysis of the component's health
+        "analysis": string, // Textual analysis of the component\'s health
         "recommendations": string[]
     }
-    \`\`\`
+    \\`\\`\\`
     `;
     return generateContent(prompt);
 }
@@ -234,7 +234,7 @@ export const getComponentTuningAnalysis = async (component: string, vehicle: Veh
 export const analyzeImage = async (image: string, vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
     // This would require a multi-modal model. Deferring full implementation.
-    return Promise.resolve(`Image analysis is not fully implemented yet. ${vehicleContext}`);
+    return Promise.resolve(\`Image analysis is not fully implemented yet. ${vehicleContext}\`);
 }
 
 export const generateHealthReport = async (data: any[], vehicle: VehicleData | undefined): Promise<string> => {
@@ -257,4 +257,58 @@ export const getRaceAnalysis = async (data: any[], vehicle: VehicleData | undefi
     The analysis should be in markdown format.
     `;
     return generateContent(prompt, false);
+}
+
+export async function analyzeDTC(
+  dtcCode: string, 
+  vehicleInfo: VehicleData,
+  freezeFrame?: FreezeFrameData
+): Promise<DiagnosticAnalysis> {
+  const prompt = `
+    Analyze this diagnostic trouble code for a ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}:
+    
+    DTC: ${dtcCode}
+    Engine: ${vehicleInfo.engine || 'VQ37VHR'}
+    Mileage: ${vehicleInfo.mileage || 'Unknown'}
+    Freeze Frame: ${JSON.stringify(freezeFrame)}
+    
+    Provide:
+    1. Detailed explanation of the fault
+    2. Likely root causes (ranked by probability)
+    3. Recommended diagnostic steps
+    4. Estimated repair cost range (NZD)
+    5. Severity level (Critical/Moderate/Minor)
+    6. Can vehicle be driven safely?
+  `;
+  
+  const result = await model.generateContent({
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.7, responseMimeType: 'application/json' }
+  });
+  
+  return JSON.parse(result.response.text());
+}
+
+export async function interpretLiveData(
+  sensorData: SensorData,
+  vehicleInfo: VehicleData
+): Promise<PerformanceAnalysis> {
+  // Real-time analysis of sensor readings for performance/health assessment
+  console.log('Interpreting live data for', vehicleInfo, sensorData);
+  return Promise.resolve({
+    performanceSummary: "Not yet implemented.",
+    anomalies: [],
+    recommendations: []
+  });
+}
+
+export async function suggestMaintenance(
+  vehicleInfo: VehicleData,
+  maintenanceHistory: MaintenanceRecord[]
+): Promise<MaintenanceRecommendations> {
+  // Predictive maintenance suggestions based on usage patterns
+  console.log('Suggesting maintenance for', vehicleInfo, maintenanceHistory);
+  return Promise.resolve({
+    recommendations: []
+  });
 }

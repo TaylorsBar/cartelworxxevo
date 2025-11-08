@@ -1,37 +1,48 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Deny all reads and writes by default
+    
+    // Default deny all access
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Allow users to read and write their own data
+    // Allow users to manage their own profile
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow authenticated users to read vehicle data
+    // Vehicle configurations are public, but only admins can modify them
+    match /vehicle_configs/{make} {
+        allow read: if true;
+        allow write: if request.auth.token.role == 'admin';
+    }
+
+    // Users can read/write their own vehicle's data
     match /vehicles/{vehicleId} {
-      allow read: if request.auth != null;
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.ownerId;
     }
-
-    // Allow authenticated users to read and write their own session data
-    match /sessions/{sessionId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    
+    // Diagnostic data linked to a vehicle
+    match /diagnostics/{diagId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        // Only allow owner of linked vehicle to view/update
+        allow update: if request.auth != null && get(/databases/$(database)/documents/vehicles/$(resource.data.vehicleId)).data.ownerId == request.auth.uid;
     }
-
-    // Allow authenticated users to read diagnostic data
-    match /diagnostics/{code} {
-      allow read: if request.auth != null;
+    
+    // Immutable maintenance and tuning records logged via Hedera
+    match /hederaRecords/{recordId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update, delete: if false; // Immutable
     }
-
-    // Allow authenticated users to read and write their own telemetry data
-    match /telemetry/{sessionId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    
+    // Allow users to create feedback
+    match /feedback/{feedbackId} {
+        allow create: if request.auth != null;
+        allow read: if request.auth.token.role == 'admin'; // Admins can read feedback
     }
   }
 }
