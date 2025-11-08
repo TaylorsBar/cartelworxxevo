@@ -155,10 +155,10 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
             transactionId = await hederaService.logECUModification(record as TuningRecord);
         }
 
-        const hederaRecord = { ...record, transactionId };
+        const hederaRecord: HederaRecord = { ...record, hederaTxId: transactionId, dataHash: 'mock-hash' };
 
         set(state => ({
-            hederaRecords: [...state.hederaRecords, hederaRecord]
+            hederaLog: [...state.hederaLog, hederaRecord]
         }));
 
         // Also save to Firestore for quick access
@@ -180,7 +180,7 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
     set({ isScanningDTCs: true, dtcError: null, dtcResults: [] });
     get().addAuditEvent(AuditEvent.DiagnosticQuery, 'Started ECU fault code scan.');
     try {
-      const codes = await obdService.readDTC();
+      const codes = await obdService.fetchDTCs();
       if (codes.length === 0) {
         set({
           dtcResults: [{
@@ -194,9 +194,12 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
         get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. No faults found.`);
       } else {
         const vehicleData = get().vehicle;
-        const results = await Promise.all(codes.map(code => getDTCInfo(code.code, vehicleData ?? undefined)));
+        const results = await Promise.all(codes.map(code => getDTCInfo(code, vehicleData ?? undefined)));
         set({ dtcResults: results });
-        get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. Found codes: ${codes.map(c => c.code).join(', ')}`);
+        get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. Found codes: ${codes.join(', ')}`);
+        if (results.some(r => r.severity === 'Critical')) {
+            // Critical DTCs are now handled via the Firebase Function
+        }
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred during scan.";
@@ -250,8 +253,9 @@ obdService.subscribe(
     const updatedData = [...data, mergedData];
     const slicedData = updatedData.length > MAX_DATA_POINTS
       ? updatedData.slice(updatedData.length - MAX_DATA_POINTS)
-      {...}
-      useVehicleStore.setState({ data: slicedData, latestData: mergedData });
+      : updatedData;
+    
+    useVehicleStore.setState({ data: slicedData, latestData: mergedData });
   }
 );
 
