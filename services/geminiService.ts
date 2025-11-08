@@ -38,7 +38,7 @@ const generateContent = async (prompt: string, json = true) => {
   });
   const text = result.response.text();
   if (json) {
-    const jsonMatch = text.match(/```json\n(.*?)\n```/s);
+    const jsonMatch = text.match(/```json\n(.*)\n```/s);
     const jsonString = jsonMatch ? jsonMatch[1] : text;
     return JSON.parse(jsonString);
   }
@@ -71,7 +71,7 @@ export const getTuningSuggestion = async (
 
     Task: Generate a new tune to meet the user's goal. The new tune should be a modification of the current tune.
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \'\'\'json
     {
       "suggestedParams": {
         "ignitionTiming": number[][],
@@ -84,7 +84,7 @@ export const getTuningSuggestion = async (
         "educationalTip": string
       }
     }
-    \`\`\`
+    \'\'\'
   `;
   return generateContent(prompt);
 };
@@ -105,12 +105,12 @@ export const analyzeTuneSafety = async (
     - Assign a safety score from 0 (dangerous) to 100 (very safe).
 
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \'\'\'json
     {
       "safetyScore": number,
       "warnings": string[]
     }
-    \`\`\`
+    \'\'\'
   `;
   return generateContent(prompt);
 };
@@ -145,7 +145,7 @@ export const getDTCInfo = async (dtc: string, vehicle: VehicleData | undefined):
     DTC: ${dtc}
     Task: Provide information about this Diagnostic Trouble Code (DTC).
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \'\'\'json
     {
         "code": "${dtc}",
         "description": string,
@@ -153,7 +153,7 @@ export const getDTCInfo = async (dtc: string, vehicle: VehicleData | undefined):
         "potentialCauses": string[],
         "remedy": string
     }
-    \`\`\`
+    \'\'\'
     `;
     return generateContent(prompt);
 };
@@ -165,7 +165,7 @@ export const getPredictiveAnalysis = async (data: any[], vehicle: VehicleData | 
     Recent Vehicle Data: ${JSON.stringify(data.slice(-10))}
     Task: Analyze the recent vehicle data and predict potential issues.
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \'\'\'json
     {
         "predictions": [
             {
@@ -177,7 +177,7 @@ export const getPredictiveAnalysis = async (data: any[], vehicle: VehicleData | 
             }
         ]
     }
-    \`\`\`
+    \'\'\'
     `;
   return generateContent(prompt);
 };
@@ -204,14 +204,14 @@ export const getComponentHealthAnalysis = async (component: string, data: any[],
     Recent Vehicle Data: ${JSON.stringify(data.slice(-20))}
     Task: Analyze the health of the specified component based on the recent data.
     Your response must be a JSON object matching this schema:
-    \`\`\`json
+    \'\'\'json
     {
         "component": "${component}",
         "healthScore": number, // 0-100
-        "analysis": string, // Textual analysis of the component's health
+        "analysis": string, // Textual analysis of the component\'s health
         "recommendations": string[]
     }
-    \`\`\`
+    \'\'\'
     `;
     return generateContent(prompt);
 }
@@ -234,7 +234,7 @@ export const getComponentTuningAnalysis = async (component: string, vehicle: Veh
 export const analyzeImage = async (image: string, vehicle: VehicleData | undefined): Promise<string> => {
     const vehicleContext = getVehicleContextString(vehicle);
     // This would require a multi-modal model. Deferring full implementation.
-    return Promise.resolve(`Image analysis is not fully implemented yet. ${vehicleContext}`);
+    return Promise.resolve(\`Image analysis is not fully implemented yet. ${vehicleContext}\`);
 }
 
 export const generateHealthReport = async (data: any[], vehicle: VehicleData | undefined): Promise<string> => {
