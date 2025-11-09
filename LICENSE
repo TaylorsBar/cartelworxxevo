@@ -1,21 +1,237 @@
-MIT License
+PROPRIETARY SOFTWARE LICENSE AGREEMENT
 
+CartelWorxxEvo - Karapiro Cartel State Highway Speed Shop
 Copyright (c) 2025 Karapiro Cartel - State Highway Speed Shop
+All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+================================================================================
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+IMPORTANT - READ CAREFULLY:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+This Proprietary Software License Agreement ("Agreement") is a legal agreement
+between you (either an individual or a single entity) and Karapiro Cartel -
+State Highway Speed Shop ("Licensor") for the CartelWorxxEvo software product,
+which includes computer software and may include associated media, printed
+materials, and "online" or electronic documentation ("Software").
+
+By accessing, downloading, installing, copying, or using the Software, you agree
+to be bound by the terms of this Agreement. If you do not agree to the terms of
+this Agreement, do not access, download, install, copy, or use the Software.
+
+================================================================================
+
+1. GRANT OF LICENSE
+
+This Software and all associated materials are the exclusive property of the
+Licensor and are protected by copyright laws and international copyright
+treaties, as well as other intellectual property laws and treaties.
+
+The Licensor grants you a limited, non-exclusive, non-transferable,
+non-sublicensable, revocable license to view the source code for reference
+purposes only. This license does NOT grant you any rights to:
+
+   a) Use, copy, modify, merge, publish, distribute, sublicense, or sell
+      copies of the Software
+   b) Create derivative works based on the Software
+   c) Reverse engineer, decompile, or disassemble the Software
+   d) Remove or alter any proprietary notices or labels on the Software
+   e) Use the Software for any commercial purpose
+   f) Transfer or assign your rights under this Agreement
+
+================================================================================
+
+2. INTELLECTUAL PROPERTY PROTECTION
+
+All rights, title, and interest in and to the Software, including but not
+limited to:
+
+   a) Source code and object code
+   b) Algorithms and computational methods
+   c) Workflows and business logic
+   d) Database schemas and data structures
+   e) User interface designs and layouts
+   f) API designs and implementations
+   g) Documentation and technical specifications
+   h) Trade secrets and proprietary information
+   i) AI/ML models and training data
+   j) Integration patterns and architectures
+   k) All derivative works and improvements
+
+are and shall remain the exclusive property of the Licensor. No title or
+ownership rights are transferred to you under this Agreement.
+
+================================================================================
+
+3. CONFIDENTIALITY
+
+You acknowledge that the Software contains valuable trade secrets and
+proprietary information of the Licensor. You agree to:
+
+   a) Maintain the confidentiality of the Software
+   b) Not disclose any part of the Software to any third party
+   c) Not use the Software for any purpose other than as expressly permitted
+   d) Take all reasonable precautions to protect the Software from unauthorized
+      access or disclosure
+   e) Notify the Licensor immediately of any unauthorized use or disclosure
+
+================================================================================
+
+4. RESTRICTIONS
+
+You may NOT:
+
+   a) Use the Software in any production environment
+   b) Incorporate any part of the Software into other products
+   c) Copy, reproduce, or distribute the Software or any portion thereof
+   d) Modify, adapt, translate, or create derivative works of the Software
+   e) Rent, lease, loan, resell, sublicense, or transfer the Software
+   f) Remove, obscure, or alter any copyright, trademark, or other proprietary
+      rights notices contained in or on the Software
+   g) Use the Software to develop competing products or services
+   h) Extract, reuse, or repurpose any algorithms, workflows, schemas, or UI
+      designs
+   i) Share access credentials or allow unauthorized access to the Software
+   j) Use the Software in violation of any applicable laws or regulations
+
+================================================================================
+
+5. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS
+OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+THE LICENSOR DOES NOT WARRANT THAT:
+   a) The Software will meet your requirements
+   b) The Software will be uninterrupted, timely, secure, or error-free
+   c) The results obtained from the use of the Software will be accurate or
+      reliable
+   d) Any errors in the Software will be corrected
+
+================================================================================
+
+6. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT,
+OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR
+LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION,
+OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE THE
+SOFTWARE, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGES.
+
+YOUR SOLE REMEDY FOR DISSATISFACTION WITH THE SOFTWARE IS TO STOP USING IT.
+
+================================================================================
+
+7. TERM AND TERMINATION
+
+This Agreement is effective until terminated. Your rights under this Agreement
+will terminate automatically without notice from the Licensor if you fail to
+comply with any term(s) of this Agreement.
+
+Upon termination:
+   a) You must cease all use of the Software
+   b) You must destroy all copies of the Software in your possession
+   c) You must certify in writing to the Licensor that you have complied with
+      these requirements
+
+The Licensor reserves the right to terminate this Agreement at any time for any
+reason or no reason.
+
+================================================================================
+
+8. ENFORCEMENT AND REMEDIES
+
+You acknowledge that unauthorized use, copying, or distribution of the Software
+will cause irreparable harm to the Licensor for which monetary damages would be
+an inadequate remedy. Accordingly, the Licensor shall be entitled to seek
+equitable relief, including injunction and preliminary injunction, in addition
+to all other remedies available at law or in equity.
+
+In the event of any breach of this Agreement, you agree to pay all of the
+Licensor's costs and expenses, including reasonable attorneys' fees, incurred
+in enforcing this Agreement.
+
+================================================================================
+
+9. INDEMNIFICATION
+
+You agree to indemnify, defend, and hold harmless the Licensor and its
+officers, directors, employees, agents, and affiliates from and against any and
+all claims, damages, obligations, losses, liabilities, costs, and expenses
+(including but not limited to attorney's fees) arising from:
+
+   a) Your use of the Software
+   b) Your violation of any term of this Agreement
+   c) Your violation of any third party right, including without limitation any
+      copyright, property, or privacy right
+
+================================================================================
+
+10. GOVERNING LAW AND JURISDICTION
+
+This Agreement shall be governed by and construed in accordance with the laws
+of New Zealand, without regard to its conflict of law provisions.
+
+Any legal action or proceeding arising under this Agreement will be brought
+exclusively in the courts located in New Zealand, and the parties hereby
+irrevocably consent to the personal jurisdiction and venue therein.
+
+================================================================================
+
+11. EXPORT RESTRICTIONS
+
+You acknowledge that the Software may be subject to export restrictions. You
+agree to comply with all applicable international and national laws that apply
+to the Software, including export control laws and regulations.
+
+================================================================================
+
+12. ENTIRE AGREEMENT
+
+This Agreement constitutes the entire agreement between you and the Licensor
+regarding the Software and supersedes all prior or contemporaneous
+understandings regarding such subject matter.
+
+No amendment to or modification of this Agreement will be binding unless in
+writing and signed by the Licensor.
+
+================================================================================
+
+13. SEVERABILITY
+
+If any provision of this Agreement is held to be unenforceable or invalid, such
+provision will be changed and interpreted to accomplish the objectives of such
+provision to the greatest extent possible under applicable law, and the
+remaining provisions will continue in full force and effect.
+
+================================================================================
+
+14. WAIVER
+
+No waiver by the Licensor of any term or condition set forth in this Agreement
+shall be deemed a further or continuing waiver of such term or condition or a
+waiver of any other term or condition, and any failure of the Licensor to
+assert a right or provision under this Agreement shall not constitute a waiver
+of such right or provision.
+
+================================================================================
+
+15. CONTACT INFORMATION
+
+For questions regarding this Agreement or to request permissions beyond the
+scope of this license, please contact:
+
+Karapiro Cartel - State Highway Speed Shop
+GitHub: https://github.com/TaylorsBar/cartelworxxevo
+
+================================================================================
+
+BY ACCESSING OR USING THE SOFTWARE, YOU ACKNOWLEDGE THAT YOU HAVE READ THIS
+AGREEMENT, UNDERSTAND IT, AND AGREE TO BE BOUND BY ITS TERMS AND CONDITIONS.
+
+IF YOU DO NOT AGREE TO THESE TERMS, DO NOT ACCESS OR USE THE SOFTWARE.
+
+================================================================================
+
+Last Updated: November 10, 2025
