@@ -1,3 +1,4 @@
+import { BleClient, numbersToDataView, dataViewToNumbers } from '@capacitor-community/bluetooth-le';
 import { DTC, SensorData, VehicleInfo, FreezeFrameData } from '../types';
 
 // ELM327 and OBD-II constants
@@ -7,16 +8,12 @@ const OBD_CHAR_UUID_TX = '0000ffe1-0000-1000-8000-00805f9b34fb';
 const OBD_CHAR_UUID_RX = '0000ffe1-0000-1000-8000-00805f9b34fb';
 
 class OBDService {
-  private device: BluetoothDevice | null = null;
-  private server: BluetoothRemoteGATTServer | null = null;
-  private txCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
-  private rxCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
-
-  private encoder = new TextEncoder();
-  private decoder = new TextDecoder();
+  private deviceId: string | null = null;
   private responseBuffer = '';
   private responseResolver: ((value: string) => void) | null = null;
   private connectionStatusCallback: ((status: 'connected' | 'connecting' | 'disconnected' | 'error', message?: string) => void) | null = null;
+  private encoder = new TextEncoder();
+  private decoder = new TextDecoder();
 
   public onConnectionStatusChange(callback: (status: 'connected' | 'connecting' | 'disconnected' | 'error', message?: string) => void) {
     this.connectionStatusCallback = callback;
@@ -25,34 +22,33 @@ class OBDService {
   public async connect(): Promise<boolean> {
     this.updateStatus('connecting', 'Requesting Bluetooth device...');
     try {
-      this.device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [OBD_SERVICE_UUID] }],
-        optionalServices: [OBD_SERVICE_UUID]
+      await BleClient.initialize();
+      const device = await BleClient.requestDevice({
+        services: [OBD_SERVICE_UUID],
       });
 
-      if (!this.device) {
+      if (!device.deviceId) {
         this.updateStatus('disconnected', 'No device selected.');
         return false;
       }
+      this.deviceId = device.deviceId;
 
-      this.device.addEventListener('gattserverdisconnected', this.onDisconnected);
-      this.updateStatus('connecting', `Connecting to ${this.device.name}...`);
+      this.updateStatus('connecting', `Connecting to ${device.name}...`);
+      await BleClient.connect(this.deviceId, this.onDisconnected);
 
-      this.server = await this.device.gatt?.connect();
-      if (!this.server) throw new Error('Failed to connect to GATT server.');
-
-      const service = await this.server.getPrimaryService(OBD_SERVICE_UUID);
-      this.txCharacteristic = await service.getCharacteristic(OBD_CHAR_UUID_TX);
-      this.rxCharacteristic = await service.getCharacteristic(OBD_CHAR_UUID_RX);
-
-      await this.rxCharacteristic.startNotifications();
-      this.rxCharacteristic.addEventListener('characteristicvaluechanged', this.handleNotifications);
+      this.updateStatus('connecting', 'Starting notifications...');
+      await BleClient.startNotifications(
+        this.deviceId,
+        OBD_SERVICE_UUID,
+        OBD_CHAR_UUID_RX,
+        this.handleNotifications
+      );
 
       this.updateStatus('connecting', 'Initializing ELM327...');
       const initSuccess = await this.initializeELM();
 
       if (initSuccess) {
-        this.updateStatus('connected', `Connected to ${this.device.name}`);
+        this.updateStatus('connected', `Connected to ${device.name}`);
         return true;
       } else {
         await this.disconnect();
@@ -68,23 +64,14 @@ class OBDService {
   }
 
   public async disconnect(): Promise<void> {
-    if (this.device?.gatt?.connected) {
-      this.device.gatt.disconnect();
-    } else {
-       this.onDisconnected();
+    if (this.deviceId) {
+      await BleClient.disconnect(this.deviceId);
     }
+    this.onDisconnected();
   }
 
   private onDisconnected = () => {
-    if (this.rxCharacteristic) {
-      this.rxCharacteristic.removeEventListener('characteristicvaluechanged', this.handleNotifications);
-    }
-    this.device?.removeEventListener('gattserverdisconnected', this.onDisconnected);
-
-    this.device = null;
-    this.server = null;
-    this.txCharacteristic = null;
-    this.rxCharacteristic = null;
+    this.deviceId = null;
     this.responseBuffer = '';
     if (this.responseResolver) {
         this.responseResolver(''); // Resolve any pending command
@@ -92,11 +79,8 @@ class OBDService {
     this.updateStatus('disconnected', 'Device disconnected.');
   }
 
-  private handleNotifications = (event: Event) => {
-    const target = event.target as BluetoothRemoteGATTCharacteristic;
-    const value = this.decoder.decode(target.value!);
-    this.responseBuffer += value;
-    
+  private handleNotifications = (value: DataView) => {
+    this.responseBuffer += this.decoder.decode(value);
     if (this.responseBuffer.trim().endsWith(ELM_PROMPT)) {
       if (this.responseResolver) {
         const cleanedResponse = this.responseBuffer.trim().replace(ELM_PROMPT, '').trim();
@@ -106,7 +90,7 @@ class OBDService {
       }
     }
   }
-  
+
   private updateStatus(status: 'connected' | 'connecting' | 'disconnected' | 'error', message?: string){
       if(this.connectionStatusCallback){
           this.connectionStatusCallback(status, message);
@@ -114,7 +98,7 @@ class OBDService {
   }
 
   public async sendCommand(command: string): Promise<string> {
-    if (!this.txCharacteristic || !this.device?.gatt?.connected) {
+    if (!this.deviceId) {
       throw new Error('Not connected to a device.');
     }
 
@@ -123,7 +107,8 @@ class OBDService {
       this.responseResolver = resolve;
     });
 
-    await this.txCharacteristic.writeValue(this.encoder.encode(command + '\r'));
+    const data = this.encoder.encode(command + '\r');
+    await BleClient.write(this.deviceId, OBD_SERVICE_UUID, OBD_CHAR_UUID_TX, numbersToDataView(data));
 
     const timeoutPromise = new Promise<string>((_, reject) =>
       setTimeout(() => reject(new Error(`Timeout waiting for response to command: ${command}`)), 5000)
@@ -154,7 +139,6 @@ class OBDService {
         throw new Error('VIN response not found or invalid.');
     }
 
-    // Handle multi-line VIN responses
     let hexVin = '';
     if (lines.length > 1) {
         hexVin = lines
@@ -166,8 +150,7 @@ class OBDService {
         hexVin = lines[0].substring(lines[0].indexOf('49 02') + 6).replace(/ /g, '');
     }
 
-    // Clean up the hex string
-    hexVin = hexVin.replace(/\s/g, '').substring(2); // remove prefix
+    hexVin = hexVin.replace(/\s/g, '').substring(2);
 
     let vin = '';
     for (let i = 0; i < hexVin.length; i += 2) {
@@ -175,7 +158,6 @@ class OBDService {
     }
 
     console.log(`VIN found: ${vin}`);
-    // In a real app, you'd use an API to get make/model/year from VIN
     return { vin, make: 'Unknown', model: 'Unknown', year: new Date().getFullYear(), engine: 'Unknown', mileage: 0 };
   }
 
@@ -219,7 +201,7 @@ class OBDService {
   }
 
   async getFreezeFrame(): Promise<FreezeFrameData> {
-    const response = await this.sendCommand('020200'); // PID 02, DTC 00 (first stored)
+    const response = await this.sendCommand('020200');
     const lines = response.split('\r').filter(line => line.startsWith('42'));
     if (lines.length === 0) {
         return {};
@@ -236,9 +218,8 @@ class OBDService {
     return freezeFrameData;
   }
 
-  // Basic parser, extend as needed
   private parseOBDResponse(pid: string, response: string): SensorData {
-    const parts = response.split(' ').slice(2); // Remove mode and PID
+    const parts = response.split(' ').slice(2);
     const a = parseInt(parts[0], 16);
     const b = parseInt(parts[1], 16);
 
@@ -246,7 +227,6 @@ class OBDService {
         case '0C': return { rpm: (a * 256 + b) / 4 };
         case '0D': return { speed: a };
         case '05': return { engineTemp: a - 40 };
-        // Add more PID parsers here
         default: return {};
     }
   }
