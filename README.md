@@ -1,4 +1,12 @@
-<div align="center">
+This software is **Proprietary and Confidential**. All rights reserved by Karapiro Cartel - State Highway Speed Shop.
+
+**Copyright © 2025 Karapiro Cartel - State Highway Speed Shop. All Rights Reserved.**
+
+This software and its source code, including but not limited to algorithms, workflows, database schemas, user interface designs, AI/ML models, and all proprietary methods, are protected intellectual property. 
+
+Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited without explicit written permission from the copyright holder.
+
+For licensing inquiries or permission requests, see the [LICENSE](LICENSE) file or contact us through our [GitHub repository](https://github.com/TaylorsBar/cartelworxxevo).<div align="center">
 
 ![Karapiro Cartel](https://github.com/user-attachments/assets/4c21c50d-6301-4f22-bd71-c854f2f59b5f)
 
@@ -6,7 +14,7 @@
 
 ### 🏎️ State Highway Speed Shop - Advanced Automotive Diagnostics Platform
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-Proprietary-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-96.7%25-blue.svg)](https://www.typescriptlang.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-Powered-orange.svg)](https://firebase.google.com/)
 [![Capacitor](https://img.shields.io/badge/Capacitor-Cross--Platform-brightgreen.svg)](https://capacitorjs.com/)
