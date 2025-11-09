@@ -254,6 +254,8 @@ export interface VehicleData {
     make: string;
     model: string;
     year: number;
+    engine?: string;
+    mileage?: number;
 }
 
 export type DidDecodeMethod = 
@@ -301,4 +303,48 @@ export interface TrainingModule {
     unlocks: string[];
     lessons: TrainingLesson[];
     badge: string;
+}
+
+export interface FreezeFrameData {
+  [key: string]: string | number;
+}
+
+export interface SensorData {
+    [key: string]: any;
+}
+
+export interface DiagnosticAnalysis {
+  explanation: string;
+  rootCauses: string[];
+  diagnosticSteps: string[];
+  repairCost: string;
+  severity: 'Critical' | 'Moderate' | 'Minor';
+  isSafeToDrive: boolean;
+}
+
+export interface PerformanceAnalysis {
+  performanceSummary: string;
+  anomalies: string[];
+  recommendations: string[];
+}
+
+export interface MaintenanceRecommendations {
+  recommendations: MaintenanceRecord[];
+}
+
+export interface TuningRecord {
+    id: string;
+    timestamp: string;
+    params: TuningParams;
+    notes: string;
+    createdBy: 'user' | 'ai';
+}
+
+export interface VehicleInfo {
+    vin: string;
+    make: string;
+    model: string;
+    year: number;
+    engine: string;
+    mileage: number;
 }

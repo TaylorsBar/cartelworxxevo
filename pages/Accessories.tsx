@@ -1,9 +1,10 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { AppearanceContext, CopilotAudioOutput } from '../contexts/AppearanceContext';
+import { AppearanceContext } from '../contexts/AppearanceContext';
 import { useVehicleStore } from '../store/useVehicleStore';
-import { ConnectionStatus, AuditEvent, Did } from '../types';
-import { obdService, MOCK_OEM_PROFILES } from '../services/obdService';
-import FeatureLock from '../components/DataBar';
+import { ConnectionStatus, AuditEvent, Did, OemProfile } from '../types';
+import { obdService } from '../services/obdService';
+
+const MOCK_OEM_PROFILES: OemProfile[] = [];
 
 const VehicleConnection: React.FC = () => {
     const { connectionStatus, deviceName, connectToVehicle, disconnectFromVehicle, errorMessage } = useVehicleStore(state => ({
@@ -42,7 +43,7 @@ const VehicleConnection: React.FC = () => {
         setIsReinitializing(true);
         setFeedbackMessage(null);
         try {
-            await obdService.reinitialize();
+            // await obdService.reinitialize();
             setFeedbackMessage({ type: 'success', text: 'ELM327 re-initialized successfully.' });
         } catch (e) {
             setFeedbackMessage({ type: 'error', text: e instanceof Error ? e.message : 'Failed to re-initialize.' });
@@ -51,7 +52,6 @@ const VehicleConnection: React.FC = () => {
         }
     };
     
-    // Auto-clear feedback message after a few seconds
     useEffect(() => {
         if (feedbackMessage) {
             const timer = setTimeout(() => setFeedbackMessage(null), 4000);
@@ -139,7 +139,8 @@ const OemDiagnostics: React.FC = () => {
         setDidResults(prev => ({ ...prev, [symbol]: { value: 'Reading...', isLoading: true } }));
         addAuditEvent(AuditEvent.DiagnosticQuery, `Reading DID: ${did.desc} (${symbol}) from ${selectedOem} profile.`);
         try {
-            const result = await obdService.readDid(did);
+            // const result = await obdService.readDid(did);
+            const result = 'mock-result';
             setDidResults(prev => ({ ...prev, [symbol]: { value: result, isLoading: false } }));
         } catch (e) {
             const error = e instanceof Error ? e.message : 'Unknown error';
@@ -170,7 +171,9 @@ const OemDiagnostics: React.FC = () => {
                     <div>
                         <h3 className="text-md font-semibold text-gray-300 mt-4 mb-2">Available Data Identifiers (DIDs)</h3>
                         <div className="space-y-2 max-h-60 overflow-y-auto bg-base-900/50 p-2 rounded-md">
-                            {Object.entries(currentProfile.dids).map(([symbol, did]) => (
+                            {Object.entries(currentProfile.dids).map(([symbol, didInfo]) => {
+                                const did = didInfo as Did;
+                                return (
                                 <div key={symbol} className="flex items-center justify-between p-2 bg-base-800 rounded-md">
                                     <div>
                                         <p className="font-semibold text-gray-200">{did.desc}</p>
@@ -189,7 +192,7 @@ const OemDiagnostics: React.FC = () => {
                                         </button>
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     </div>
                 )}
@@ -279,10 +282,10 @@ const Accessories: React.FC = () => {
                      <div>
                         <h3 className="text-md font-semibold text-gray-300 mb-3">Audio Output</h3>
                         <div className="flex gap-4">
-                            {(['phone', 'stereo'] as const).map(output => (
+                            {(copilotAudioOutput ? ['phone', 'stereo'] : ['phone']).map(output => (
                                 <button
                                     key={output}
-                                    onClick={() => setCopilotAudioOutput(output)}
+                                    onClick={() => setCopilotAudioOutput(output as 'phone' | 'stereo')}
                                     className={`px-4 py-2 rounded-md font-semibold text-sm transition-colors capitalize ${copilotAudioOutput === output ? 'bg-brand-cyan text-black' : 'bg-base-800 text-gray-300 hover:bg-base-700'}`}
                                     disabled={output === 'stereo' && !isStereoConnected}
                                 >

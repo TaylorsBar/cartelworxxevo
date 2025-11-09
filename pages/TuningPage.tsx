@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useVehicleStore } from '../store/useVehicleStore';
 import { getTuningSuggestion, analyzeTuneSafety, getTuningChatResponse } from '../services/geminiService';
-import { TuningSuggestion, ChatMessage, AuditEvent, HederaEventType, TuningParams, VehicleData } from '../types';
+import { TuningSuggestion, ChatMessage, AuditEvent, TuningParams, TuningRecord, VehicleData } from '../types';
 import TuningSlider from '../components/tuning/TuningSlider';
 import TuningMap3D from '../components/tuning/TuningMap3D';
 import SparklesIcon from '../components/icons/SparklesIcon';
@@ -80,7 +80,9 @@ const TuningPage: React.FC = () => {
         if (suggestedOffset !== undefined && suggestedOffset !== null) {
             setBoostPressureOffset(suggestedOffset);
         }
-        setCurrentTune(prev => ({ ...prev, ...suggestedMaps }));
+        
+        const newTune = { ...currentTune, ...suggestedMaps };
+        setCurrentTune(newTune);
 
         const aiMessage: ChatMessage = {
             id: Date.now().toString(),
@@ -97,7 +99,16 @@ const TuningPage: React.FC = () => {
         }
         setAiChat(prev => [...prev, aiMessage]);
         addAuditEvent(AuditEvent.TuningChange, `AI tuning suggestion '${goal}' applied.`);
-        addHederaRecord(HederaEventType.Tuning, `AI tune '${goal}' applied.`);
+        
+        const tuningRecord: TuningRecord = {
+            id: `tune-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            params: newTune,
+            notes: `AI tune for '${goal}'`,
+            createdBy: 'ai',
+        };
+        addHederaRecord(tuningRecord, 'tuning');
+        
         setSafetyReport(null);
     };
 
@@ -107,7 +118,7 @@ const TuningPage: React.FC = () => {
         setAiChat(prev => [...prev, userMessage]);
         addAuditEvent(AuditEvent.AiAnalysis, `Requested AI tuning suggestion for "${goal}".`);
         try {
-            const suggestion = await getTuningSuggestion(goal, vehicle, currentTune, boostPressureOffset);
+            const suggestion = await getTuningSuggestion(goal, vehicle as VehicleData, currentTune, boostPressureOffset);
             applySuggestion(suggestion, goal);
         } catch (e) {
             const error = e instanceof Error ? e.message : "An unknown error occurred.";
@@ -125,7 +136,7 @@ const TuningPage: React.FC = () => {
         setAiChat(prev => [...prev, userMessage]);
         addAuditEvent(AuditEvent.AiAnalysis, `Requested tune safety analysis.`);
         try {
-            const report = await analyzeTuneSafety(currentTune, boostPressureOffset, vehicle);
+            const report = await analyzeTuneSafety(currentTune, boostPressureOffset, vehicle as VehicleData);
             setSafetyReport({ score: report.safetyScore, warnings: report.warnings });
             let safetyMessage = `**Safety Analysis Complete**\n- **Safety Score:** ${report.safetyScore}/100\n`;
             if (report.warnings.length > 0) {
@@ -155,7 +166,7 @@ const TuningPage: React.FC = () => {
         setAiIsLoading(true);
         
         try {
-            const response = await getTuningChatResponse(aiChatInput, currentTune, boostPressureOffset, vehicle);
+            const response = await getTuningChatResponse(aiChatInput, currentTune, boostPressureOffset, vehicle as VehicleData);
             const aiMessage: ChatMessage = { id: (Date.now() + 1).toString(), sender: 'ai', text: response };
             setAiChat(prev => [...prev, aiMessage]);
         } catch (e) {

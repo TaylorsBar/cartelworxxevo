@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { getCoPilotResponse } from '../services/geminiService';
-import { DiagnosticAlert, AlertLevel, GroundingChunk } from '../types';
+import { DiagnosticAlert, AlertLevel, GroundingChunk, ChatMessage } from '../types';
 import { useVehicleStore } from '../store/useVehicleStore';
 import { MOCK_ALERTS } from './Alerts';
 import MicrophoneIcon from './icons/MicrophoneIcon';
@@ -32,7 +32,7 @@ const CoPilot: React.FC = () => {
 
   const { speak, isSpeaking, cancel } = useTextToSpeech();
 
-  const activeAlerts = MOCK_ALERTS.filter(alert => {
+  const activeAlerts: DiagnosticAlert[] = MOCK_ALERTS.filter(alert => {
     return !alert.isFaultRelated || hasActiveFault;
   });
 
@@ -40,7 +40,7 @@ const CoPilot: React.FC = () => {
     setAiResponse(response);
     setGroundingChunks(chunks || []);
     setState(CoPilotState.Speaking);
-    speak(response, () => setState(CoPilotState.Idle));
+    speak(response);
   }, [speak]);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ const CoPilot: React.FC = () => {
       setAiResponse(announcement);
       setIsOpen(true);
       setState(CoPilotState.Speaking);
-      speak(announcement, () => setState(CoPilotState.Idle));
+      speak(announcement);
 
       setAnnouncedAlertIds(prev => new Set(prev).add(alertToAnnounce.id));
     }
@@ -68,8 +68,9 @@ const CoPilot: React.FC = () => {
     setState(CoPilotState.Thinking);
     setAiResponse('');
     setGroundingChunks([]);
-    const { response, groundingChunks } = await getCoPilotResponse([{ sender: 'user', text: command }], vehicle ?? undefined);
-    handleAiResponse(response, groundingChunks);
+    const chatHistory: ChatMessage[] = [{ sender: 'user', text: command, id: '1' }];
+    const { text, chunks } = await getCoPilotResponse(chatHistory[0], vehicle ?? undefined);
+    handleAiResponse(text, chunks);
   }, [vehicle, handleAiResponse]);
 
   const { isListening, startListening, stopListening, hasSupport, error: speechError } = useSpeechRecognition(processCommand);

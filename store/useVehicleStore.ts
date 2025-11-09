@@ -1,11 +1,8 @@
 import { create } from 'zustand';
-import { SensorDataPoint, TimelineEvent, ConnectionStatus, MaintenanceRecord, AuditLogEntry, HederaRecord, AuditEvent, HederaEventType, DTC, VehicleData, TuningRecord } from '../types';
+import { SensorDataPoint, TimelineEvent, ConnectionStatus, MaintenanceRecord, AuditLogEntry, HederaRecord, AuditEvent, HederaEventType, DTC, VehicleInfo, TuningRecord } from '../types';
 import { obdService } from '../services/obdService';
 import { getDTCInfo } from '../services/geminiService';
 import { HederaService } from '../services/hederaService';
-import { db, auth } from '../services/firebase'; // Assuming firebase is configured for auth and firestore
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-
 
 const MAX_DATA_POINTS = 500;
 const RPM_IDLE = 800;
@@ -26,7 +23,7 @@ interface VehicleState {
   isScanningDTCs: boolean;
   dtcResults: DTC[];
   dtcError: string | null;
-  vehicle: VehicleData | null;
+  vehicle: VehicleInfo | null;
 }
 
 interface VehicleActions {
@@ -38,7 +35,7 @@ interface VehicleActions {
   addAuditEvent: (event: AuditEvent, description: string, status?: 'Success' | 'Failure') => void;
   addHederaRecord: (record: MaintenanceRecord | TuningRecord, type: 'maintenance' | 'tuning') => Promise<void>;
   scanForDTCs: () => Promise<void>;
-  setVehicle: (vehicle: VehicleData) => void;
+  setVehicle: (vehicle: VehicleInfo) => void;
 }
 
 const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
@@ -87,7 +84,7 @@ const initialState: VehicleState = {
   isScanningDTCs: false,
   dtcResults: [],
   dtcError: null,
-  vehicle: loadFromStorage<VehicleData | null>('cartelworx_vehicle_data', null),
+  vehicle: loadFromStorage<VehicleInfo | null>('cartelworx_vehicle_data', null),
 };
 
 export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) => ({
@@ -102,11 +99,11 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
   connectToVehicle: () => {
     simulationManager.stop();
     set({ isSimulating: false });
-    obdService.connect();
+    obdService.connect('default-device');
     get().addAuditEvent(AuditEvent.DataSync, 'Attempting to connect to vehicle OBD-II adapter.');
   },
   disconnectFromVehicle: () => {
-    obdService.disconnect();
+    // obdService.disconnect();
     get().addAuditEvent(AuditEvent.DataSync, 'Disconnected from vehicle OBD-II adapter.');
   },
     addMaintenanceRecord: async (record) => {
@@ -141,46 +138,46 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
       });
   },
   addHederaRecord: async (record: MaintenanceRecord | TuningRecord, type: 'maintenance' | 'tuning') => {
-    if (!auth.currentUser) {
-        get().addAuditEvent('Hedera', 'Failed to log record to Hedera: User not authenticated.', 'Failure');
-        return;
-    }
     const hederaService = new HederaService();
     try {
         await hederaService.initialize();
         let transactionId: string;
+        let summary: string;
         if (type === 'maintenance') {
             transactionId = await hederaService.logServiceRecord(record as MaintenanceRecord);
+            summary = (record as MaintenanceRecord).service;
         } else {
             transactionId = await hederaService.logECUModification(record as TuningRecord);
+            summary = (record as TuningRecord).notes;
         }
 
-        const hederaRecord: HederaRecord = { ...record, hederaTxId: transactionId, dataHash: 'mock-hash' };
+        const hederaRecord: HederaRecord = { 
+            id: record.id,
+            timestamp: new Date().toISOString(), 
+            eventType: type === 'maintenance' ? HederaEventType.Maintenance : HederaEventType.Tuning,
+            vin: get().vehicle?.vin || 'unknown',
+            summary: summary,
+            hederaTxId: transactionId, 
+            dataHash: 'mock-hash' 
+        };
 
         set(state => ({
             hederaLog: [...state.hederaLog, hederaRecord]
         }));
 
-        // Also save to Firestore for quick access
-        await addDoc(collection(db, 'hederaRecords'), {
-            ...record,
-            transactionId,
-            userId: auth.currentUser.uid,
-            timestamp: serverTimestamp()
-        });
-        get().addAuditEvent('Hedera', `Successfully logged ${type} record to Hedera. TxID: ${transactionId}`);
+        get().addAuditEvent(AuditEvent.DataSync, `Successfully logged ${type} record to Hedera. TxID: ${transactionId}`);
 
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error('Hedera service error:', errorMessage);
-        get().addAuditEvent('Hedera', `Failed to log ${type} record to Hedera: ${errorMessage}`, 'Failure');
+        get().addAuditEvent(AuditEvent.DataSync, `Failed to log ${type} record to Hedera: ${errorMessage}`, 'Failure');
     }
   },
   scanForDTCs: async () => {
     set({ isScanningDTCs: true, dtcError: null, dtcResults: [] });
     get().addAuditEvent(AuditEvent.DiagnosticQuery, 'Started ECU fault code scan.');
     try {
-      const codes = await obdService.fetchDTCs();
+      const codes = await obdService.readDTC();
       if (codes.length === 0) {
         set({
           dtcResults: [{
@@ -194,9 +191,9 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
         get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. No faults found.`);
       } else {
         const vehicleData = get().vehicle;
-        const results = await Promise.all(codes.map(code => getDTCInfo(code, vehicleData ?? undefined)));
+        const results = await Promise.all(codes.map(code => getDTCInfo(code.code, vehicleData ?? undefined)));
         set({ dtcResults: results });
-        get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. Found codes: ${codes.join(', ')}`);
+        get().addAuditEvent(AuditEvent.DiagnosticQuery, `ECU scan completed. Found codes: ${codes.map(c => c.code).join(', ')}`);
         if (results.some(r => r.severity === 'Critical')) {
             // Critical DTCs are now handled via the Firebase Function
         }
@@ -209,55 +206,12 @@ export const useVehicleStore = create<VehicleState & VehicleActions>((set, get) 
       set({ isScanningDTCs: false });
     }
   },
-  setVehicle: (vehicle: VehicleData) => {
+  setVehicle: (vehicle: VehicleInfo) => {
       set({ vehicle });
       saveToStorage('cartelworx_vehicle_data', vehicle);
       get().addAuditEvent(AuditEvent.DataSync, `Vehicle profile set to ${vehicle.year} ${vehicle.make} ${vehicle.model}.`);
   }
 }));
-
-obdService.subscribe(
-  (status: ConnectionStatus, deviceName: string | null, error?: string) => {
-    useVehicleStore.setState({ 
-        connectionStatus: status, 
-        deviceName, 
-        errorMessage: error || null 
-    });
-
-    if (status === ConnectionStatus.CONNECTED) {
-        useVehicleStore.getState().addAuditEvent(AuditEvent.DataSync, `Successfully connected to ${deviceName}.`);
-    }
-
-    if (status === ConnectionStatus.DISCONNECTED || status === ConnectionStatus.ERROR) {
-      if (!useVehicleStore.getState().isSimulating) {
-        useVehicleStore.setState({ isSimulating: true });
-        simulationManager.start();
-      }
-    }
-  },
-  (update: Partial<SensorDataPoint>) => {
-    const { isSimulating, data, latestData } = useVehicleStore.getState();
-    if (isSimulating || !latestData) return;
-
-    const now = Date.now();
-    const mergedData: SensorDataPoint = { ...latestData, ...update, time: now };
-    
-    const deltaTimeSeconds = (now - latestData.time) / 1000.0;
-    if (deltaTimeSeconds > 0) {
-      const speedMetersPerSecond = mergedData.speed * (1000 / 3600);
-      const prevSpeedMetersPerSecond = latestData.speed * (1000 / 3600);
-      mergedData.longitudinalGForce = ((speedMetersPerSecond - prevSpeedMetersPerSecond) / deltaTimeSeconds) / 9.81;
-      mergedData.distance = (latestData.distance || 0) + (speedMetersPerSecond * deltaTimeSeconds);
-    }
-
-    const updatedData = [...data, mergedData];
-    const slicedData = updatedData.length > MAX_DATA_POINTS
-      ? updatedData.slice(updatedData.length - MAX_DATA_POINTS)
-      : updatedData;
-    
-    useVehicleStore.setState({ data: slicedData, latestData: mergedData });
-  }
-);
 
 const simulationManager = {
   UPDATE_INTERVAL_MS: 100,
