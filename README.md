@@ -1,8 +1,7 @@
 
 # CartelWorx EVO VI
 
-This is a production-ready application that was built with the help of an AI assistant.
-
+<iframe width="560" height="315" src="https://www.youtube.com/embed/-3QnJKFX-ek?si=Y_a1Tr2-XjJMjqp3" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 ## Features
 
 * Role-based access control (RBAC)
